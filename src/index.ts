@@ -1,1 +1,3 @@
-export * from '../src/commands';
+export * from './getSchema';
+export * from './parser';
+export * from './schemaToString';

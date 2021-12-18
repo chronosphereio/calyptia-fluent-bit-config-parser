@@ -70,11 +70,9 @@ export function parse(config: string) {
 
 export class FluentBitSchema {
   private _source: string;
-
   private _ast: FluentBitSchemaType[];
   constructor(source: string) {
     this._ast = parse(source);
-
     this._source = source;
   }
   static isFluentBitConfiguration(source: string) {

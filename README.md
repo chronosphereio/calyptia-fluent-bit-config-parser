@@ -3,10 +3,10 @@
       <img src="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/validation.yml/badge.svg" alt="Validation" />
     </a>
     <a href="https://codecov.io/gh/calyptia/fluent-bit-config-parser">
-      <img src="https://codecov.io/gh/calyptia/fluent-bit-config-parser/branch/master/graph/badge.svg?token=48gHuQl8zV" alt="codecov" />
+      <img src="https://codecov.io/gh/calyptia/fluent-bit-config-parser/branch/main/graph/badge.svg?token=48gHuQl8zV" alt="codecov" />
     </a>
-    <a href="https://codecov.io/gh/calyptia/fluent-bit-config-parser/blob/main/LICENSE">
-      <img src="https://img.shields.io/hexpm/l/calyptia/fluent-bit-config-parser" alt="APACHE 2.0 license" />
+    <a href="https://github.com/calyptia/fluent-bit-config-parser//blob/main/LICENSE">
+      <img src="https://img.shields.io/github/license/calyptia/fluent-bit-config-parser" alt="APACHE 2.0 license" />
     </a>
 </p>
 

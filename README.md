@@ -1,33 +1,29 @@
 <p align="center">
-  <h3 align="center">Template for typescript applications</h3>
+    <a href="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/validation.yml">
+      <img src="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/validation.yml/badge.svg" alt="Validation" />
+    </a>
+    <a href="https://codecov.io/gh/calyptia/fluent-bit-config-parser">
+      <img src="https://codecov.io/gh/calyptia/fluent-bit-config-parser/branch/master/graph/badge.svg?token=48gHuQl8zV" alt="codecov" />
+    </a>
+    <a href="https://codecov.io/gh/calyptia/fluent-bit-config-parser/blob/main/LICENSE">
+      <img src="https://img.shields.io/hexpm/l/calyptia/fluent-bit-config-parser" alt="APACHE 2.0 license" />
+    </a>
+</p>
 
   <p align="center">
-     ⚙ Template repository for typescript applications meant to run in node ⚙
-    <br />
-    <a href="https://github.com/gagoar/ts-node-template#table-of-contents"><strong>Explore the docs »</strong></a>
-    <br />
-    <a href="https://github.com/gagoar/ts-node-template/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/gagoar/ts-node-template/issues">Request Feature</a>
+    <a href="https://github.com/calyptia/fluent-bit-config-parser">
+      <img src="images/logo.png" alt="Logo" width="128" height="128">
+    </a>
+
   </p>
-</p>
 
 ## Table of Contents
 
-- [Built With](#built-with)
 - [Getting Started](#getting-started)
 - [Contributing](#contributing)
 - [License](#license)
 
 <!-- CONTRIBUTING -->
-
-### Built With
-
-- [ncc](https://github.com/vercel/ncc/)
-- [jest](https://github.com/facebook/jest)
-- [ora](https://github.com/sindresorhus/ora)
-- [commander](https://github.com/tj/commander.js/)
-- [cosmiconfig](https://github.com/davidtheclark/cosmiconfig)
 
 ## Contributing
 

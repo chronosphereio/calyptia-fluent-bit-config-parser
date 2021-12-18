@@ -6,3 +6,4 @@ coverage/
 cli/
 # ignore dist/ output
 dist/
+.DS_Store

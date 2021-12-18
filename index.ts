@@ -1,1 +1,1 @@
-export * from './src';
+export { FluentBitSchema } from './src';

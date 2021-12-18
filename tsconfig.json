@@ -1,9 +1,10 @@
 {
-  "include": ["src", "test", "index.ts"],
+  "include": ["src", "__tests__", "index.ts", "__fixtures__/fluentBitCases.ts"],
   "compilerOptions": {
     "target": "es2017",
     "module": "es6",
     "lib": ["dom", "esnext"],
+    "importsNotUsedAsValues": "error",
     "emitDecoratorMetadata": true,
     "importHelpers": true,
     "declaration": true,

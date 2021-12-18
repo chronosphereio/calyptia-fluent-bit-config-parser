@@ -17,7 +17,7 @@
 
 </p>
 
-Configuration parser for Fluent-bit
+Configuration parser for [Fluent-bit](https://github.com/fluent/fluent-bit)
 
 ## Table of Contents
 
@@ -33,7 +33,7 @@ Getting Started
 
 fluent-bit configuration parser will allow you to validate some aspects of fluent-bit configuration.
 
-for more information about fluent-bit configuration you can go . [here](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/configuration-file).
+for more information about fluent-bit configuration you can visit [fluent-bit website](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/configuration-file).
 
 ### How to import
 

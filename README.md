@@ -5,9 +5,13 @@
     <a href="https://codecov.io/gh/calyptia/fluent-bit-config-parser">
       <img src="https://codecov.io/gh/calyptia/fluent-bit-config-parser/branch/main/graph/badge.svg?token=48gHuQl8zV" alt="codecov" />
     </a>
-    <a href="https://github.com/calyptia/fluent-bit-config-parser//blob/main/LICENSE">
+    <a href="https://github.com/calyptia/fluent-bit-config-parser/blob/main/LICENSE">
       <img src="https://img.shields.io/github/license/calyptia/fluent-bit-config-parser" alt="APACHE 2.0 license" />
     </a>
+    <a href="https://www.npmjs.com/package/@calyptia/fluent-bit-config-parser">
+      <img src="https://img.shields.io/npm/v/@calyptia/fluent-bit-config-parser" alt="npm version" />
+    </a>
+    <!--  -->
 </p>
 
 <p align="center">

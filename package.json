@@ -1,6 +1,9 @@
 {
-  "name": "fluent-bit-config-parser",
-  "repository": "git@github.com:calyptia/fluent-bit-config-parser.git",
+  "name": "@calyptia/fluent-bit-config-parser",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/calyptia/fluent-bit-config-parser.git"
+  },
   "license": "Apache-2.0",
   "version": "1.0.0",
   "description": "fluent-bit config parser for js/ts",
@@ -116,5 +119,9 @@
     "tslib": "2.3.1",
     "typescript": "4.5.2",
     "utf-8-validate": "5.0.4"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/calyptia/fluent-bit-config-parser/issues"
+  },
+  "homepage": "https://github.com/calyptia/fluent-bit-config-parser#readme"
 }

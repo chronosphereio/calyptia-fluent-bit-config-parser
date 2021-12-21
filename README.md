@@ -1,6 +1,9 @@
 <p align="center">
-    <a href="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/validation.yml">
-      <img src="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/validation.yml/badge.svg" alt="Unit tests + Linting" />
+    <a href="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/linting.yml">
+      <img src="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/linting.yml/badge.svg" alt="Linting" />
+    </a>
+    <a href="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/unit-tests.yml">
+      <img src="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/unit-tests.yml/badge.svg" alt="unit-tests" />
     </a>
     <a href="https://codecov.io/gh/calyptia/fluent-bit-config-parser">
       <img src="https://codecov.io/gh/calyptia/fluent-bit-config-parser/branch/main/graph/badge.svg?token=48gHuQl8zV" alt="codecov" />

@@ -4,6 +4,8 @@ export enum COMMANDS {
   FILTER = 'FILTER',
   SERVICE = 'SERVICE',
   PARSER = 'PARSER',
+
+  CUSTOM = 'CUSTOM',
 }
 export type FluentBitSchemaType = {
   id: string;
@@ -12,8 +14,5 @@ export type FluentBitSchemaType = {
   optional?: unknown;
 } & { [key: string]: unknown };
 export const FLUENTBIT_REGEX = /(?<![#][ ]*)\[[A-Z]{1,}\]/g;
-export const FLUENTD_REGEX = /(?<![#][ ]*)\<[a-zA-Z-@/. \_*\{\},]{1,}\>/g;
-
-export const ATTR_TYPES = ['source', 'filter', 'match', 'label'];
 
 export const EXCLUDED_TAGS = new Set(['service', 'parser', 'node', 'upstream']);

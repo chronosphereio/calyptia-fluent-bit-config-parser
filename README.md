@@ -1,6 +1,6 @@
 <p align="center">
     <a href="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/validation.yml">
-      <img src="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/validation.yml/badge.svg" alt="Validation" />
+      <img src="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/validation.yml/badge.svg" alt="Unit tests + Linting" />
     </a>
     <a href="https://codecov.io/gh/calyptia/fluent-bit-config-parser">
       <img src="https://codecov.io/gh/calyptia/fluent-bit-config-parser/branch/main/graph/badge.svg?token=48gHuQl8zV" alt="codecov" />
@@ -32,8 +32,6 @@ Configuration parser for [Fluent-bit](https://github.com/fluent/fluent-bit)
 - [License](#license)
 
 ## Getting Started
-
-Getting Started
 
 fluent-bit configuration parser will allow you to validate some aspects of fluent-bit configuration.
 

@@ -32,7 +32,6 @@ describe('fluentBit', () => {
         Message_Key my_key
     `)
     ).toThrowErrorMatchingInlineSnapshot(
-      '"Command is not valid, we got INVALID, it should be OUTPUT,INPUT,FILTER,SERVICE,PARSER"',
       '"Command is not valid, we got INVALID, it should be OUTPUT,INPUT,FILTER,SERVICE,PARSER,CUSTOM"'
     );
   });

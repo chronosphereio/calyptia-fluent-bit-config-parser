@@ -11,7 +11,7 @@ export type FluentBitSchemaType = {
   id: string;
   name?: string;
   command: COMMANDS;
-  optional?: unknown;
+  optional?: Record<string, unknown>;
 } & { [key: string]: unknown };
 export const FLUENTBIT_REGEX = /(?<![#][ ]*)\[[A-Z]{1,}\]/g;
 

@@ -76,10 +76,15 @@ export function parse(config: string) {
   return configBlocks.filter(isValidFluentBitSchemaType);
 }
 
+enum TOKEN_TYPES {
+  properties = 'PROPERTIES',
+  closeBlock = 'CLOSE_BLOCK',
+  openBlock = 'OPEN_BLOCK',
+}
 const stateSet = {
   main: {
-    lbrace: { match: '[', push: 'block' },
-    properties: {
+    [TOKEN_TYPES.openBlock]: { match: '[', push: 'block' },
+    [TOKEN_TYPES.properties]: {
       // match: /\w+[\w+\/\.\d\*\-]+\s+[\/\w\/\.\d\*-]+/,
       match: /\w+[-.*\d\w]+\s.*/,
       // match: /\w+[-.*\d\w]+\s+[-.*\d\w\/,<>$\^\+\{\}\(\)\?]+/,
@@ -95,7 +100,7 @@ const stateSet = {
       type: keywords(COMMANDS),
     },
     comment: { match: /#.*/, lineBreaks: true },
-    rbrace: { match: ']', push: 'main' },
+    [TOKEN_TYPES.closeBlock]: { match: ']', push: 'main' },
   },
 };
 export function parser2(config: string) {
@@ -121,7 +126,7 @@ export function parser2(config: string) {
     }
 
     if (command) {
-      if (token.type === 'properties') {
+      if (token.type === TOKEN_TYPES.properties) {
         const [key, value] = token.value.split(' ');
 
         block = {
@@ -131,7 +136,7 @@ export function parser2(config: string) {
         continue;
       }
 
-      if (token.type === 'lbrace') {
+      if (token.type === TOKEN_TYPES.openBlock) {
         configBlocks.push({ ...block });
         block = {} as FluentBitSchemaType;
         command = undefined;

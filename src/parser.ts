@@ -1,7 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getFluentBitSchema } from './getSchema';
 import { COMMANDS, type FluentBitSchemaType, FLUENTBIT_REGEX } from './constants';
-import { isFluentBit, isValidCommand, isValidFluentBitSchemaType } from './guards';
+import {
+  isCommandType,
+  isCustomBlock,
+  isFluentBit,
+  isValidCommand,
+  isValidFluentBitSchemaType,
+  isValidToken,
+} from './guards';
+import { keywords, states } from 'moo';
 import { schemaToString } from './schemaToString';
 function normalizeField(field: string) {
   const normalizedField = field.toLowerCase();
@@ -68,11 +76,80 @@ export function parse(config: string) {
   return configBlocks.filter(isValidFluentBitSchemaType);
 }
 
+const stateSet = {
+  main: {
+    lbrace: { match: '[', push: 'block' },
+    properties: {
+      // match: /\w+[\w+\/\.\d\*\-]+\s+[\/\w\/\.\d\*-]+/,
+      match: /\w+[-.*\d\w]+\s.*/,
+      // match: /\w+[-.*\d\w]+\s+[-.*\d\w\/,<>$\^\+\{\}\(\)\?]+/,
+      value: (value: string) => value.replace(/\s+/, ' '),
+      lineBreaks: true,
+    },
+    space: { match: /\s+/, lineBreaks: true },
+    comment: { match: /#.*/, lineBreaks: true },
+  },
+  block: {
+    command: {
+      match: /\w+/,
+      type: keywords(COMMANDS),
+    },
+    comment: { match: /#.*/, lineBreaks: true },
+    rbrace: { match: ']', push: 'main' },
+  },
+};
+export function parser2(config: string) {
+  const lexer = states(stateSet);
+
+  const tokens = lexer.reset(config);
+
+  const configBlocks = [] as FluentBitSchemaType[];
+  let block = {} as FluentBitSchemaType;
+  let command = undefined as COMMANDS | undefined;
+
+  for (const token of tokens) {
+    // Ignoring spaces and comments
+    if (!isValidToken(token.type)) {
+      continue;
+    }
+
+    // If we find a valid command we begin collecting properties.
+    if (isCommandType(token.type)) {
+      command = token.value as COMMANDS;
+      block = { command, id: uuidv4() };
+      continue;
+    }
+
+    if (command) {
+      if (token.type === 'properties') {
+        const [key, value] = token.value.split(' ');
+
+        block = {
+          ...block,
+          [normalizeField(key)]: value,
+        };
+        continue;
+      }
+
+      if (token.type === 'lbrace') {
+        configBlocks.push({ ...block });
+        block = {} as FluentBitSchemaType;
+        command = undefined;
+        continue;
+      }
+    }
+  }
+
+  configBlocks.push({ ...block });
+
+  return configBlocks.filter((block) => isValidFluentBitSchemaType(block) && !isCustomBlock(block));
+}
+
 export class FluentBitSchema {
   private _source: string;
   private _ast: FluentBitSchemaType[];
   constructor(source: string) {
-    this._ast = parse(source);
+    this._ast = parser2(source);
     this._source = source;
   }
   static isFluentBitConfiguration(source: string) {

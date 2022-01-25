@@ -88,7 +88,7 @@ const stateSet = {
       // match: /\w+[\w+\/\.\d\*\-]+\s+[\/\w\/\.\d\*-]+/,
       match: /\w+[-.*\d\w]+\s.*/,
       // match: /\w+[-.*\d\w]+\s+[-.*\d\w\/,<>$\^\+\{\}\(\)\?]+/,
-      value: (value: string) => value.replace(/\s+/, ' '),
+      value: (value: string) => value.replace(/\s+/, ' ').trim(),
       lineBreaks: true,
     },
     space: { match: /\s+/, lineBreaks: true },

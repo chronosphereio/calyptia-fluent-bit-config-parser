@@ -4,7 +4,6 @@ export enum COMMANDS {
   FILTER = 'FILTER',
   SERVICE = 'SERVICE',
   PARSER = 'PARSER',
-
   CUSTOM = 'CUSTOM',
 }
 export type FluentBitSchemaType = {

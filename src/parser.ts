@@ -1,78 +1,106 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getFluentBitSchema } from './getSchema';
-import { COMMANDS, type FluentBitSchemaType, FLUENTBIT_REGEX } from './constants';
-import { isFluentBit, isValidCommand, isValidFluentBitSchemaType } from './guards';
+import { COMMANDS, type FluentBitSchemaType } from './constants';
+import { isCommandType, isCustomBlock, isFluentBit, isUsefulValidToken, isValidFluentBitSchemaType } from './guards';
+import { keywords, states } from 'moo';
 import { schemaToString } from './schemaToString';
 function normalizeField(field: string) {
   const normalizedField = field.toLowerCase();
   return normalizedField === 'match_regex' ? 'match' : normalizedField;
 }
-export function parse(config: string) {
+enum TOKEN_TYPES {
+  properties = 'PROPERTIES',
+  closeBlock = 'CLOSE_BLOCK',
+  openBlock = 'OPEN_BLOCK',
+  command = 'COMMAND',
+}
+
+const stateSet = {
+  main: {
+    [TOKEN_TYPES.openBlock]: { match: '[', push: 'block' },
+    [TOKEN_TYPES.properties]: [
+      {
+        match: /\w+[-.*\d\w]+\s.*/,
+        value: (value: string) => value.replace(/\s+/, ' ').trim(),
+        lineBreaks: true,
+      },
+    ],
+    space: { match: /\s+/, lineBreaks: true },
+    comment: { match: /#.*/, lineBreaks: true },
+  },
+  block: {
+    [TOKEN_TYPES.command]: {
+      match: /\w+/,
+      type: keywords(COMMANDS),
+    },
+    comment: { match: /#.*/, lineBreaks: true },
+    [TOKEN_TYPES.closeBlock]: { match: ']', push: 'main' },
+  },
+};
+export function parser(config: string) {
   if (!config.replace(/\s/g, '')) {
-    throw new Error('Invalid Config file');
+    throw new Error('Invalid config file');
   }
-  const fields = config.match(FLUENTBIT_REGEX);
-  let prev: number;
 
-  if (!fields) {
-    throw new Error('We could not find fields in the configuration');
+  if (!isFluentBit(config)) {
+    throw new Error('This file is not a valid Fluent Bit config file');
   }
-  const indexes = fields.map((field, key) => {
-    if (key) {
-      prev = config.indexOf(field, prev + fields[key - 1].length);
-      return prev;
+
+  const lexer = states(stateSet);
+  const tokens = lexer.reset(config);
+
+  const configBlocks = [] as FluentBitSchemaType[];
+  let block = {} as FluentBitSchemaType;
+  let command = undefined as COMMANDS | undefined;
+
+  for (const token of tokens) {
+    // Ignoring spaces and comments
+    if (!isUsefulValidToken(token.type)) {
+      continue;
     }
 
-    prev = config.indexOf(field);
-    return prev;
-  });
-  const parsedByBlock = indexes.map((index, key) => config.slice(index, indexes[key + 1]));
-
-  const parsedBlocksByLines = parsedByBlock.map((val) =>
-    val.split('\n').filter((elm) => !!elm.replace(/\s/g, '').length)
-  );
-
-  const configBlocks = parsedBlocksByLines.map((val) => {
-    const blockSchema = {} as FluentBitSchemaType;
-
-    const [commandField, ...blocks] = val;
-
-    const command = commandField.replace(/[\[\]]/g, '');
-
-    if (!isValidCommand(command)) {
-      throw new Error(`Command is not valid, we got ${command}, it should be ${Object.keys(COMMANDS)}`);
+    if (token.type === TOKEN_TYPES.command) {
+      throw new Error(
+        `${token.line}:${token.col} Invalid command ${token.value}. Valid commands are ${Object.keys(COMMANDS)}`
+      );
+    }
+    // If we find a valid command we begin collecting properties.
+    if (isCommandType(token.type)) {
+      command = token.value as COMMANDS;
+      block = { command, id: uuidv4() };
+      continue;
     }
 
-    for (const block of blocks) {
-      let temp = block.replace(/\s+/g, ' ');
+    if (command) {
+      if (token.type === TOKEN_TYPES.properties) {
+        const [key, ...value] = token.value.split(' ');
 
-      if (temp[0] === ' ') {
-        temp = temp.substring(1);
-      }
-
-      if (temp[0] === '#') {
+        block = {
+          ...block,
+          [normalizeField(key)]: value.join(' '),
+        };
         continue;
       }
 
-      const [field, ...properties] = temp.split(' ').filter(Boolean);
-
-      blockSchema[normalizeField(field)] = properties.reduce((acc, cur) => acc + cur + ' ', ' ').slice(1, -1);
+      if (token.type === TOKEN_TYPES.openBlock) {
+        configBlocks.push({ ...block });
+        block = {} as FluentBitSchemaType;
+        command = undefined;
+        continue;
+      }
     }
+  }
 
-    if (blockSchema.name && (blockSchema.name.includes('fluentbit_metrics') || blockSchema.name.includes('calyptia'))) {
-      return null;
-    }
-    return { ...blockSchema, command, id: uuidv4() };
-  });
+  configBlocks.push({ ...block });
 
-  return configBlocks.filter(isValidFluentBitSchemaType);
+  return configBlocks.filter((block) => isValidFluentBitSchemaType(block) && !isCustomBlock(block));
 }
 
 export class FluentBitSchema {
   private _source: string;
   private _ast: FluentBitSchemaType[];
   constructor(source: string) {
-    this._ast = parse(source);
+    this._ast = parser(source);
     this._source = source;
   }
   static isFluentBitConfiguration(source: string) {

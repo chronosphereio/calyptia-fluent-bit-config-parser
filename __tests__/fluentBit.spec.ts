@@ -5,12 +5,12 @@ jest.mock('uuid', () => ({ v4: () => 'UNIQUE' }));
 
 describe('fluentBit', () => {
   it('Fails if config is empty', () => {
-    expect(() => new FluentBitSchema('       ')).toThrowErrorMatchingInlineSnapshot('"Invalid Config file"');
+    expect(() => new FluentBitSchema('       ')).toThrowErrorMatchingInlineSnapshot('"Invalid config file"');
   });
 
   it('Fails if config has no fields', () => {
     expect(() => new FluentBitSchema('# some comment')).toThrowErrorMatchingInlineSnapshot(
-      '"We could not find fields in the configuration"'
+      '"This file is not a valid Fluent Bit config file"'
     );
   });
   it('Fails if config has invalid commands', () => {
@@ -32,7 +32,7 @@ describe('fluentBit', () => {
         Message_Key my_key
     `)
     ).toThrowErrorMatchingInlineSnapshot(
-      '"Command is not valid, we got INVALID, it should be OUTPUT,INPUT,FILTER,SERVICE,PARSER,CUSTOM"'
+      '"2:6 Invalid command INVALID. Valid commands are OUTPUT,INPUT,FILTER,SERVICE,PARSER,CUSTOM"'
     );
   });
 
@@ -122,7 +122,8 @@ describe('fluentBit', () => {
           port  8088
           tls  On
           tls.verify  Off
-          message_key  my_key"
+          message_key  my_key
+          add_label  pipeline_id a21fd551-095b-4271-acf0-c2fdb3161b84"
     `);
   });
 

@@ -90,11 +90,13 @@
   "author": "Gago <xeroice@gmail.com>",
   "dependencies": {
     "debug": "4.3.3",
+    "moo": "^0.5.1",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@types/debug": "4.1.7",
     "@types/jest": "26.0.24",
+    "@types/moo": "^0.5.5",
     "@types/node": "16.11.12",
     "@types/uuid": "^8.3.3",
     "@typescript-eslint/eslint-plugin": "5.4.0",

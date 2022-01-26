@@ -102,7 +102,7 @@ describe('fluentBit', () => {
 
     expect(config.toString()).toMatchInlineSnapshot(`
       "[INPUT]
-          name  tail
+          name  tail # some comment
           tag  tail.01
           path  /var/log/system.log
 
@@ -122,7 +122,8 @@ describe('fluentBit', () => {
           port  8088
           tls  On
           tls.verify  Off
-          message_key  my_key"
+          message_key  my_key
+          add_label  pipeline_id a21fd551-095b-4271-acf0-c2fdb3161b84"
     `);
   });
 

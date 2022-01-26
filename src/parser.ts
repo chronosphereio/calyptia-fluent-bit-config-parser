@@ -18,11 +18,15 @@ enum TOKEN_TYPES {
 const stateSet = {
   main: {
     [TOKEN_TYPES.openBlock]: { match: '[', push: 'block' },
-    [TOKEN_TYPES.properties]: {
-      match: /\w+[-.*\d\w]+\s.*/,
-      value: (value: string) => value.replace(/\s+/, ' '),
-      lineBreaks: true,
-    },
+    // label: { match: /\w+[-.*\d\w]+\s+\w+[-.*\d\w]+\s+\w+[-.*\d\w]+/, lineBreaks: true },
+    [TOKEN_TYPES.properties]: [
+      {
+        // match: /\w+[-.*\d\w]+(?:\s+[\w\d\/!@#\$%\^\&*\)\(+=><.,_-]+){1}/,
+        match: /\w+[-.*\d\w]+\s.*/,
+        value: (value: string) => value.replace(/\s+/, ' '),
+        lineBreaks: true,
+      },
+    ],
     space: { match: /\s+/, lineBreaks: true },
     comment: { match: /#.*/, lineBreaks: true },
   },
@@ -71,11 +75,11 @@ export function parser(config: string) {
 
     if (command) {
       if (token.type === TOKEN_TYPES.properties) {
-        const [key, value] = token.value.split(' ');
+        const [key, ...value] = token.value.split(' ');
 
         block = {
           ...block,
-          [normalizeField(key)]: value,
+          [normalizeField(key)]: value.join(' ').trim(),
         };
         continue;
       }

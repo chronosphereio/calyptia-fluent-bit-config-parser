@@ -11,7 +11,7 @@ export const cases: Case[] = [
       config: [
         {
           command: COMMANDS.INPUT,
-          name: 'tail',
+          name: 'tail # some comment',
           optional: {
             tag: 'tail.01',
             path: '/var/log/system.log',

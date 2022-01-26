@@ -12,6 +12,7 @@ enum TOKEN_TYPES {
   properties = 'PROPERTIES',
   closeBlock = 'CLOSE_BLOCK',
   openBlock = 'OPEN_BLOCK',
+  command = 'COMMAND',
 }
 
 const stateSet = {
@@ -28,7 +29,7 @@ const stateSet = {
     comment: { match: /#.*/, lineBreaks: true },
   },
   block: {
-    command: {
+    [TOKEN_TYPES.command]: {
       match: /\w+/,
       type: keywords(COMMANDS),
     },
@@ -58,7 +59,7 @@ export function parser(config: string) {
       continue;
     }
 
-    if (token.type === 'command') {
+    if (token.type === TOKEN_TYPES.command) {
       throw new Error(
         `${token.line}:${token.col} Invalid command ${token.value}. Valid commands are ${Object.keys(COMMANDS)}`
       );

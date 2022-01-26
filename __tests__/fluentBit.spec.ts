@@ -1,17 +1,16 @@
 import { FluentBitSchema } from '../index';
-import { parser2 } from '../src';
 import { cases } from '../__fixtures__/fluentBitCases';
 
 jest.mock('uuid', () => ({ v4: () => 'UNIQUE' }));
 
 describe('fluentBit', () => {
   it('Fails if config is empty', () => {
-    expect(() => new FluentBitSchema('       ')).toThrowErrorMatchingInlineSnapshot('"Invalid Config file"');
+    expect(() => new FluentBitSchema('       ')).toThrowErrorMatchingInlineSnapshot('"Invalid config file"');
   });
 
   it('Fails if config has no fields', () => {
     expect(() => new FluentBitSchema('# some comment')).toThrowErrorMatchingInlineSnapshot(
-      '"We could not find fields in the configuration"'
+      '"This file is not a valid Fluent Bit config file"'
     );
   });
   it('Fails if config has invalid commands', () => {
@@ -33,7 +32,7 @@ describe('fluentBit', () => {
         Message_Key my_key
     `)
     ).toThrowErrorMatchingInlineSnapshot(
-      '"Command is not valid, we got INVALID, it should be OUTPUT,INPUT,FILTER,SERVICE,PARSER,CUSTOM"'
+      '"2:6 Invalid command INVALID. Valid commands are OUTPUT,INPUT,FILTER,SERVICE,PARSER,CUSTOM"'
     );
   });
 
@@ -84,7 +83,7 @@ describe('fluentBit', () => {
       }
     `);
   });
-  it.only.each(cases)('Parse config: %s', (_name, rawConfig, expected) => {
+  it.each(cases)('Parse config: %s', (_name, rawConfig, expected) => {
     const config = new FluentBitSchema(rawConfig);
     expect(config.schema).toMatchObject(expected);
   });
@@ -103,7 +102,7 @@ describe('fluentBit', () => {
 
     expect(config.toString()).toMatchInlineSnapshot(`
       "[INPUT]
-          name  tail # some comment
+          name  tail
           tag  tail.01
           path  /var/log/system.log
 
@@ -156,79 +155,5 @@ describe('fluentBit', () => {
     </match>
 `;
     expect(FluentBitSchema.isFluentBitConfiguration(fluentDConfig)).toBe(false);
-  });
-
-  it.only('parse22', async () => {
-    const lexer = parser2(cases[2][1]);
-
-    expect(Array.from(lexer)).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "command": "INPUT",
-          "id": "UNIQUE",
-          "name": "Tail",
-          "path": "/foo",
-          "tag": "kube.*",
-        },
-        Object {
-          "command": "OUTPUT",
-          "id": "UNIQUE",
-          "match": "kube*audit",
-          "name": "Splunk",
-          "splunk_token": "foo",
-        },
-        Object {
-          "command": "OUTPUT",
-          "delivery_stream": "foo",
-          "id": "UNIQUE",
-          "match": "kube.*",
-          "name": "kinesis_firehose",
-          "region": "oregon",
-        },
-        Object {
-          "command": "FILTER",
-          "id": "UNIQUE",
-          "match": "kube*",
-          "name": "kubernetes",
-        },
-      ]
-    `);
-  });
-  it.only('parse22', async () => {
-    const lexer = parser2(cases[0][1]);
-
-    expect(Array.from(lexer)).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "command": "INPUT",
-          "id": "UNIQUE",
-          "name": "tail",
-          "path": "/var/log/system.log",
-          "tag": "tail.01",
-        },
-        Object {
-          "bucket": "your-bucket",
-          "command": "OUTPUT",
-          "id": "UNIQUE",
-          "match": "*",
-          "name": "s3",
-          "region": "us-east-1",
-          "store_dir": "/home/ec2-user/buffer",
-          "total_file_size": "50M",
-          "upload_timeout": "10m",
-        },
-        Object {
-          "command": "OUTPUT",
-          "host": "127.0.0.1",
-          "id": "UNIQUE",
-          "match": "*",
-          "message_key": "my_key",
-          "name": "splunk",
-          "port": "8088",
-          "tls": "On",
-          "tls.verify": "Off",
-        },
-      ]
-    `);
   });
 });

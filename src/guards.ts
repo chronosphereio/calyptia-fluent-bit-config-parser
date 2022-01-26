@@ -1,6 +1,7 @@
 import { FLUENTBIT_REGEX, COMMANDS, type FluentBitSchemaType, EXCLUDED_TAGS } from './constants';
 
-export const isValidCommand = (value: string): value is COMMANDS => Object.keys(COMMANDS).includes(value);
+export const isValidCommand = (value?: string): value is COMMANDS =>
+  isString(value) && Object.keys(COMMANDS).includes(value);
 
 export const isFluentBit = (config: string) => !!config.match(FLUENTBIT_REGEX);
 
@@ -9,7 +10,7 @@ export const isValidFluentBitSchemaType = (schema?: FluentBitSchemaType | null):
 
 export const isString = (value?: string): value is string => typeof value === 'string';
 
-export const isValidToken = (type?: string): boolean => isString(type) && !['space', 'comment'].includes(type);
+export const isUsefulValidToken = (type?: string): boolean => isString(type) && !['space', 'comment'].includes(type);
 
 export const isCommandType = (type?: string): type is COMMANDS =>
   isString(type) && Object.keys(COMMANDS).includes(type);

@@ -19,10 +19,8 @@ const stateSet = {
   main: {
     [TOKEN_TYPES.openBlock]: { match: '[', push: 'block' },
     [TOKEN_TYPES.properties]: {
-      // match: /\w+[\w+\/\.\d\*\-]+\s+[\/\w\/\.\d\*-]+/,
       match: /\w+[-.*\d\w]+\s.*/,
-      // match: /\w+[-.*\d\w]+\s+[-.*\d\w\/,<>$\^\+\{\}\(\)\?]+/,
-      value: (value: string) => value.replace(/\s+/, ' ').trim(),
+      value: (value: string) => value.replace(/\s+/, ' '),
       lineBreaks: true,
     },
     space: { match: /\s+/, lineBreaks: true },

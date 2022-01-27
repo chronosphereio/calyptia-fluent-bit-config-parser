@@ -1,21 +1,25 @@
+import { table } from 'table';
+import { NO_STYLES_IN_TABLE } from './constants';
+
 import type { FluentBitSchemaType } from './constants';
 
-const NEW_CHAR = '\n' + ' ' + ' ' + ' ' + ' ';
+const PROP_DEFAULT_INDENT = 3;
 
-const propToConfigParam = (key: string, value: unknown): string => `${NEW_CHAR}${key}  ${value}`;
+const getIndent = (indent: number): string => Array.from({ length: indent }).join(' ');
+export function schemaToString(configBlocks: FluentBitSchemaType[], { propIndent = PROP_DEFAULT_INDENT }): string {
+  const data = [] as string[][];
+  const spanningCells = [];
 
-export function schemaToString(configValues: FluentBitSchemaType[]) {
-  const blocks = configValues.map((values) => {
-    // destructuring id to avoid having it in the final output.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { command, id, optional, ...rest } = values;
-    const properties = Object.entries({ ...rest, ...optional }).reduce(
-      (memo, [key, value]) => `${memo}${propToConfigParam(key, value)}`,
-      ''
-    );
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  for (const { command, id, optional, ...rest } of configBlocks) {
+    data.push([`\n[${command}]`, '']);
+    spanningCells.push({ col: 0, row: 3, colSpan: 3 });
 
-    return [`[${command.toUpperCase()}]`, properties].join('');
-  });
+    for (const [key, value] of Object.entries({ ...rest, ...optional })) {
+      data.push([`${getIndent(propIndent)}${key}`, String(value)]);
+      spanningCells.push({ col: 0, row: 0, colSpan: 0 });
+    }
+  }
 
-  return blocks.join('\n\n');
+  return table(data, NO_STYLES_IN_TABLE);
 }

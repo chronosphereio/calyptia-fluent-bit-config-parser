@@ -1,3 +1,5 @@
+import { getBorderCharacters } from 'table';
+
 export enum COMMANDS {
   OUTPUT = 'OUTPUT',
   INPUT = 'INPUT',
@@ -15,3 +17,12 @@ export type FluentBitSchemaType = {
 export const FLUENTBIT_REGEX = /(?<![#][ ]*)\[[A-Z]{1,}\]/g;
 
 export const EXCLUDED_TAGS = new Set(['service', 'parser', 'node', 'upstream']);
+
+export const NO_STYLES_IN_TABLE = {
+  border: getBorderCharacters('void'),
+  columnDefault: {
+    paddingLeft: 0,
+    paddingRight: 1,
+  },
+  drawHorizontalLine: (): boolean => false,
+};

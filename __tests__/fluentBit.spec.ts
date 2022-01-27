@@ -101,29 +101,31 @@ describe('fluentBit', () => {
     const config = new FluentBitSchema(rawConfig);
 
     expect(config.toString()).toMatchInlineSnapshot(`
-      "[INPUT]
-          name  tail # some comment
-          tag  tail.01
-          path  /var/log/system.log
-
-      [OUTPUT]
-          name  s3
-          match  *
-          bucket  your-bucket
-          region  us-east-1
-          store_dir  /home/ec2-user/buffer
-          total_file_size  50M
-          upload_timeout  10m
-
-      [OUTPUT]
-          name  splunk
-          match  *
-          host  127.0.0.1
-          port  8088
-          tls  On
-          tls.verify  Off
-          message_key  my_key
-          add_label  pipeline_id a21fd551-095b-4271-acf0-c2fdb3161b84"
+      "                                                                   
+      [INPUT]                                                            
+        name            tail # some comment                              
+        tag             tail.01                                          
+        path            /var/log/system.log                              
+                                                                         
+      [OUTPUT]                                                           
+        name            s3                                               
+        match           *                                                
+        bucket          your-bucket                                      
+        region          us-east-1                                        
+        store_dir       /home/ec2-user/buffer                            
+        total_file_size 50M                                              
+        upload_timeout  10m                                              
+                                                                         
+      [OUTPUT]                                                           
+        name            splunk                                           
+        match           *                                                
+        host            127.0.0.1                                        
+        port            8088                                             
+        tls             On                                               
+        tls.verify      Off                                              
+        message_key     my_key                                           
+        add_label       pipeline_id a21fd551-095b-4271-acf0-c2fdb3161b84 
+      "
     `);
   });
 

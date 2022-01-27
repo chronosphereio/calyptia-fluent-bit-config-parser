@@ -112,7 +112,7 @@ export class FluentBitSchema {
   get schema() {
     return getFluentBitSchema(this._ast);
   }
-  toString() {
-    return schemaToString(this._ast);
+  toString(indent?: number) {
+    return schemaToString(this._ast, { propIndent: indent });
   }
 }

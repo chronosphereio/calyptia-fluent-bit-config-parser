@@ -2,8 +2,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { getFluentBitSchema } from './getSchema';
 import { COMMANDS, type FluentBitSchemaType } from './constants';
 import { isCommandType, isCustomBlock, isFluentBit, isUsefulValidToken, isValidFluentBitSchemaType } from './guards';
-import { keywords, states } from 'moo';
+import { keywords, states, Token } from 'moo';
 import { schemaToString } from './schemaToString';
+import { readFileSync, realpathSync } from 'fs';
+import { join } from 'path';
+import { basename } from 'path/posix';
 function normalizeField(field: string) {
   const normalizedField = field.toLowerCase();
   return normalizedField === 'match_regex' ? 'match' : normalizedField;
@@ -13,11 +16,15 @@ enum TOKEN_TYPES {
   closeBlock = 'CLOSE_BLOCK',
   openBlock = 'OPEN_BLOCK',
   command = 'COMMAND',
+  include = 'INCLUDE',
 }
+
+type FLUENT_BIT_TOKEN = Token & { directive?: string; filePath: string };
 
 const stateSet = {
   main: {
     [TOKEN_TYPES.openBlock]: { match: '[', push: 'block' },
+    [TOKEN_TYPES.include]: { match: /@include+\s.*/, lineBreak: true },
     [TOKEN_TYPES.properties]: [
       {
         match: /\w+[-.*\d\w]+\s.*/,
@@ -37,7 +44,7 @@ const stateSet = {
     [TOKEN_TYPES.closeBlock]: { match: ']', push: 'main' },
   },
 };
-export function parser(config: string) {
+export function tokenize(config: string, filePath: string): FLUENT_BIT_TOKEN[] {
   if (!config.replace(/\s/g, '')) {
     throw new Error('Invalid config file');
   }
@@ -46,8 +53,32 @@ export function parser(config: string) {
     throw new Error('This file is not a valid Fluent Bit config file');
   }
 
-  const lexer = states(stateSet);
-  const tokens = lexer.reset(config);
+  let tokens = [] as FLUENT_BIT_TOKEN[];
+  const lexer = states(stateSet).reset(config);
+
+  // We will expand every include first, looking for any missing paths and invalid tokens
+  for (const token of lexer) {
+    if (token.type === TOKEN_TYPES.include) {
+      const [, includeFilePath] = token.value.split(' ');
+
+      const fullPath = realpathSync(join(basename(filePath), includeFilePath));
+
+      try {
+        const includeConfig = readFileSync(fullPath, { encoding: 'utf-8' });
+
+        tokens = [...tokens, ...tokenize(includeConfig, filePath)];
+      } catch (e) {
+        throw new Error(`${token.line}:${token.col} Path ${filePath}. Valid commands are ${Object.keys(COMMANDS)}`);
+      }
+    } else {
+      tokens.push({ ...token, filePath });
+    }
+  }
+
+  return tokens;
+}
+export function parser(config: string, filePath: string) {
+  const tokens = tokenize(config, filePath);
 
   const configBlocks = [] as FluentBitSchemaType[];
   let block = {} as FluentBitSchemaType;
@@ -97,14 +128,23 @@ export function parser(config: string) {
 }
 
 export class FluentBitSchema {
+  private _filePath: string;
   private _source: string;
   private _ast: FluentBitSchemaType[];
-  constructor(source: string) {
-    this._ast = parser(source);
+  constructor(source: string, filePath: string) {
     this._source = source;
+    this._filePath = filePath;
+    this._ast = parser(source, filePath);
   }
   static isFluentBitConfiguration(source: string) {
     return isFluentBit(source);
+  }
+  get AST() {
+    return this._ast;
+  }
+
+  get filePath() {
+    return this._filePath;
   }
   get source() {
     return this._source;

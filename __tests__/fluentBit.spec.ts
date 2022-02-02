@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import { FluentBitSchema } from '../index';
 import { cases } from '../__fixtures__/fluentBitCases';
 
@@ -5,18 +6,21 @@ jest.mock('uuid', () => ({ v4: () => 'UNIQUE' }));
 
 describe('fluentBit', () => {
   it('Fails if config is empty', () => {
-    expect(() => new FluentBitSchema('       ')).toThrowErrorMatchingInlineSnapshot('"Invalid config file"');
+    expect(() => new FluentBitSchema('       ', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
+      '"Invalid config file"'
+    );
   });
 
   it('Fails if config has no fields', () => {
-    expect(() => new FluentBitSchema('# some comment')).toThrowErrorMatchingInlineSnapshot(
+    expect(() => new FluentBitSchema('# some comment', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
       '"This file is not a valid Fluent Bit config file"'
     );
   });
   it('Fails if config has invalid commands', () => {
     expect(
       () =>
-        new FluentBitSchema(`
+        new FluentBitSchema(
+          `
     [INVALID]
         Name        tail
         Tag         tail.01
@@ -30,7 +34,9 @@ describe('fluentBit', () => {
         TLS         On
         TLS.Verify  Off
         Message_Key my_key
-    `)
+    `,
+          '/file/path.conf'
+        )
     ).toThrowErrorMatchingInlineSnapshot(
       '"2:6 Invalid command INVALID. Valid commands are OUTPUT,INPUT,FILTER,SERVICE,PARSER,CUSTOM"'
     );
@@ -53,7 +59,7 @@ describe('fluentBit', () => {
         total_file_size 50M
         upload_timeout 10m 
     `;
-    const config = new FluentBitSchema(rawConfig);
+    const config = new FluentBitSchema(rawConfig, '/file/path.conf');
     expect(config.schema).toMatchInlineSnapshot(`
       Object {
         "config": Array [
@@ -83,22 +89,22 @@ describe('fluentBit', () => {
       }
     `);
   });
-  it.each(cases)('Parse config: %s', (_name, rawConfig, expected) => {
-    const config = new FluentBitSchema(rawConfig);
+  it.each(cases)('Parse config: %s', (filePath, rawConfig, expected) => {
+    const config = new FluentBitSchema(rawConfig, filePath);
     expect(config.schema).toMatchObject(expected);
   });
 
-  it.each(cases)('Returns source: %s', (_name, rawConfig) => {
-    const config = new FluentBitSchema(rawConfig);
+  it.each(cases)('Returns source: %s', (filePath, rawConfig) => {
+    const config = new FluentBitSchema(rawConfig, filePath);
     expect(config.source).toBe(rawConfig);
   });
   it('should transform schema to string for basic.conf', () => {
-    const [, rawConfig] = cases[0];
+    const [filePath, rawConfig] = cases[0];
 
     // We need to normalize given that SchemaToString will return values toLowerCase + spaces normalized.
     // const normalize = (config: string) => config.replace(/\s/g, '').toLocaleLowerCase();
 
-    const config = new FluentBitSchema(rawConfig);
+    const config = new FluentBitSchema(rawConfig, filePath);
 
     expect(config.toString()).toMatchInlineSnapshot(`
       "                                                                   
@@ -127,6 +133,14 @@ describe('fluentBit', () => {
         add_label       pipeline_id a21fd551-095b-4271-acf0-c2fdb3161b84 
       "
     `);
+  });
+
+  it('parses global @includes in configuration', async () => {
+    const filePath = './__fixtures__/nested/withIncludes.conf';
+    const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
+
+    const config = new FluentBitSchema(rawConfig, filePath);
+    expect(config.AST).toMatchInlineSnapshot();
   });
 
   it.each(cases)('is %s, fluent-bit configuration?', (_name, rawConfig) => {

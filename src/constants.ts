@@ -16,6 +16,11 @@ export type FluentBitSchemaType = {
 } & { [key: string]: unknown };
 export const FLUENTBIT_REGEX = /(?<![#][ ]*)\[[A-Z]{1,}\]/g;
 
+/** It will match @includes files as a valid Fluent Bit configuration.
+ *  [Follow this link for an example](https://regex101.com/r/zrSRR2/1)
+ */
+export const FLUENTBIT_INCLUDE_REGEX = /(@include+\s.*){1,}/g;
+
 export const EXCLUDED_TAGS = new Set(['service', 'parser', 'node', 'upstream']);
 
 export const NO_STYLES_IN_TABLE = {

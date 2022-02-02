@@ -5,8 +5,8 @@ type Case = [name: string, content: string, SchemaAST: { config: FluentBitSchema
 
 export const cases: Case[] = [
   [
-    './__fixtures__/basic.conf',
-    fs.readFileSync('./__fixtures__/basic.conf', { encoding: 'utf8' }),
+    './__fixtures__/basic/basic.conf',
+    fs.readFileSync('./__fixtures__/basic/basic.conf', { encoding: 'utf8' }),
     {
       config: [
         {
@@ -48,8 +48,8 @@ export const cases: Case[] = [
     },
   ],
   [
-    './__fixtures__/basic2.conf',
-    fs.readFileSync('./__fixtures__/basic2.conf', { encoding: 'utf8' }),
+    './__fixtures__/basic/basic2.conf',
+    fs.readFileSync('./__fixtures__/basic/basic2.conf', { encoding: 'utf8' }),
     {
       config: [
         {
@@ -75,8 +75,8 @@ export const cases: Case[] = [
     },
   ],
   [
-    './__fixtures__/basic3.conf',
-    fs.readFileSync('./__fixtures__/basic3.conf', { encoding: 'utf8' }),
+    './__fixtures__/basic/basic3.conf',
+    fs.readFileSync('./__fixtures__/basic/basic3.conf', { encoding: 'utf8' }),
     {
       config: [
         {
@@ -119,8 +119,8 @@ export const cases: Case[] = [
     },
   ],
   [
-    './__fixtures__/basic4.conf',
-    fs.readFileSync('./__fixtures__/basic4.conf', { encoding: 'utf-8' }),
+    './__fixtures__/basic/basic4.conf',
+    fs.readFileSync('./__fixtures__/basic/basic4.conf', { encoding: 'utf-8' }),
     {
       config: [
         {

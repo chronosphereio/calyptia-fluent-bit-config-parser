@@ -53,8 +53,17 @@ export function tokenize(config: string, filePath: string, pathMemo = new Set())
   // https://github.com/calyptia/fluent-bit-config-parser/issues/15
   for (const token of lexer) {
     if (token.type === TOKEN_TYPES.include) {
-      const [, includeFilePath] = token.value.split(' ');
+      const [, includeFilePath, ...rest] = token.value.split(' ');
 
+      // In case we find more arguments in the value given to the include directive we will fail with some guidance in the error.
+      if (rest.length) {
+        throw new TokenError(
+          `You are trying to include ${includeFilePath}, but we also found more arguments (${rest}). Includes can only have a single value (ex: @includes path/to/a/file)`,
+          filePath,
+          token.line,
+          token.col
+        );
+      }
       let includeConfig = '';
       const fullPath = join(dirname(filePath), includeFilePath);
 
@@ -76,7 +85,7 @@ export function tokenize(config: string, filePath: string, pathMemo = new Set())
         if (e instanceof TokenError) {
           throw e;
         }
-        throw new TokenError(`Can not read file, loading from ${filePath}`, fullPath, token.line, token.col);
+        throw new TokenError(`Can not read file, loading from ${filePath} `, fullPath, token.line, token.col);
       }
 
       const includeTokens = tokenize(includeConfig, fullPath, pathMemo);

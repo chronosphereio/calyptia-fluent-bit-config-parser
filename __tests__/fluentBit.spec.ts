@@ -164,6 +164,22 @@ describe('fluentBit', () => {
     `);
   });
 
+  it('Fails retrieving an include that contains more than a single path as a value', async () => {
+    const filePath = '__fixtures__/includes/withWrongIncludeValue.conf';
+    const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
+    try {
+      new FluentBitSchema(rawConfig, filePath);
+    } catch (e) {
+      expect(e).toBeInstanceOf(TokenError);
+      const error = e as TokenError;
+      expect(error.line).toBe(3);
+      expect(error.col).toBe(1);
+      expect(error.message).toMatchInlineSnapshot(
+        '"<PROJECT_ROOT>/__fixtures__/includes/withWrongIncludeValue.conf: 3:1 You are trying to include nested/tail.conf, but we also found more arguments (shouldNotHaveAnytingElse). Includes can only have a single value (ex: @includes path/to/a/file)"'
+      );
+      expect(error.filePath).toMatchInlineSnapshot('"<PROJECT_ROOT>/__fixtures__/includes/withWrongIncludeValue.conf"');
+    }
+  });
   it('Fails retrieving a repeated include (can not include file twice) ', async () => {
     const filePath = '__fixtures__/includes/withDuplicatedIncludes.conf';
     const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
@@ -193,10 +209,10 @@ describe('fluentBit', () => {
       expect(error.line).toBe(3);
       expect(error.col).toBe(1);
       expect(error.message).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/includes/nested/notexistentInclude.conf: 3:1 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/includes/withFailingIncludes.conf"'
+        '"<PROJECT_ROOT>/__fixtures__/includes/nested/notExistentInclude.conf: 3:1 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/includes/withFailingIncludes.conf "'
       );
       expect(error.filePath).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/includes/nested/notexistentInclude.conf"'
+        '"<PROJECT_ROOT>/__fixtures__/includes/nested/notExistentInclude.conf"'
       );
     }
   });

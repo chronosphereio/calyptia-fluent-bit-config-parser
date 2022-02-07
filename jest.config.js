@@ -11,6 +11,7 @@ module.exports = {
     '^.+\\.tsx?$': 'ts-jest',
   },
   preset: 'ts-jest',
+  snapshotSerializers: ['jest-serializer-path'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testURL: 'http://localhost',
   transformIgnorePatterns: ['[/\\\\]node_modules[/\\\\].+\\.(js|jsx)$'],

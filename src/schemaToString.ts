@@ -1,12 +1,10 @@
 import { table } from 'table';
-import { NO_STYLES_IN_TABLE } from './constants';
-
-import type { FluentBitSchemaType } from './constants';
+import { type FluentBitSection, NO_STYLES_IN_TABLE } from './constants';
 
 const PROP_DEFAULT_INDENT = 3;
 
 const getIndent = (indent: number): string => Array.from({ length: indent }).join(' ');
-export function schemaToString(configBlocks: FluentBitSchemaType[], { propIndent = PROP_DEFAULT_INDENT }): string {
+export function schemaToString(configBlocks: FluentBitSection[], { propIndent = PROP_DEFAULT_INDENT }): string {
   const data = [] as string[][];
   const spanningCells = [];
 

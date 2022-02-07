@@ -8,12 +8,17 @@ export enum COMMANDS {
   PARSER = 'PARSER',
   CUSTOM = 'CUSTOM',
 }
-export type FluentBitSchemaType = {
+
+export type FluentBitSection = {
   id: string;
   name?: string;
   command: COMMANDS;
   optional?: { [key: string]: unknown };
 };
+
+export interface FluentBitSchemaType extends FluentBitSection {
+  __filePath: string;
+}
 export const FLUENTBIT_REGEX = /(?<![#][ ]*)\[[A-Z]{1,}\]/g;
 
 /** It will match @includes files as a valid Fluent Bit configuration.

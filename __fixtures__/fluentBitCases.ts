@@ -1,7 +1,7 @@
 import fs from 'fs';
-import { COMMANDS, FluentBitSchemaType } from '../src/constants';
+import { COMMANDS, FluentBitSection } from '../src/constants';
 
-type Case = [name: string, content: string, SchemaAST: { config: FluentBitSchemaType[] }];
+type Case = [name: string, content: string, SchemaAST: { config: FluentBitSection[] }];
 
 export const cases: Case[] = [
   [

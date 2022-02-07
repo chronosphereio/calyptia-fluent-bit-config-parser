@@ -63,6 +63,7 @@ describe('fluentBit', () => {
   });
   it.each(cases)('Parse config: %s', (filePath, rawConfig, expected) => {
     const config = new FluentBitSchema(rawConfig, filePath);
+    expect(config.filePath).toMatch(filePath);
     expect(config.schema).toMatchObject(expected.config);
   });
 
@@ -107,14 +108,69 @@ describe('fluentBit', () => {
     `);
   });
 
-  it('parses global @includes in configuration', async () => {
+  it('Parses global @includes in configuration', async () => {
     const filePath = './__fixtures__/nested/withIncludes.conf';
     const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
-
     const config = new FluentBitSchema(rawConfig, filePath);
-    expect(config.schema).toMatchInlineSnapshot('Array []');
+    expect(config.AST).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "__filePath": "<PROJECT_ROOT>/__fixtures__/nested/nested/tail.conf",
+          "command": "INPUT",
+          "id": "UNIQUE",
+          "name": "tail",
+          "optional": Object {
+            "alias": "function_A_json_tail",
+            "parser": "json",
+            "path": "\${DEFAULT_LOGS_DIR}/some-json.log",
+            "path_key": "filename",
+            "refresh_interval": "10",
+            "skip_empty_lines": "On",
+            "skip_long_lines": "On",
+            "tag": "recommended.log.functionA",
+          },
+        },
+        Object {
+          "__filePath": "<PROJECT_ROOT>/__fixtures__/nested/nested/service.conf",
+          "command": "SERVICE",
+          "id": "UNIQUE",
+          "optional": Object {
+            "flush": "1",
+            "health_check": "On",
+            "http_port": "\${HTTP_PORT}",
+            "http_server": "On",
+            "log_level": "Debug",
+            "parsers_file": "/fluent-bit/etc/parsers/parsers-custom.conf",
+            "storage.metrics": "On",
+          },
+        },
+        Object {
+          "__filePath": "<PROJECT_ROOT>/__fixtures__/nested/withIncludes.conf",
+          "command": "OUTPUT",
+          "id": "UNIQUE",
+          "name": "loki",
+          "optional": Object {
+            "alias": "loki_output",
+            "host": "\${LOKI_HOST}",
+            "label_keys": "$file,$level",
+            "labels": "job=recommended-fluentbit",
+            "match": "\${LOKI_MATCH}",
+            "port": "\${LOKI_PORT}",
+            "workers": "1",
+          },
+        },
+      ]
+    `);
   });
 
+  it('Fails retrieving a missing include (file not found) ', async () => {
+    const filePath = './__fixtures__/nested/withFailingIncludes.conf';
+    const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
+    const config = () => new FluentBitSchema(rawConfig, filePath);
+    expect(config).toThrowErrorMatchingInlineSnapshot(
+      '"Can not read file, loading from <PROJECT_ROOT>/__fixtures__/nested/withFailingIncludes.conf"'
+    );
+  });
   it.each(cases)('is %s, fluent-bit configuration?', (_name, rawConfig) => {
     expect(FluentBitSchema.isFluentBitConfiguration(rawConfig)).toBe(true);
   });

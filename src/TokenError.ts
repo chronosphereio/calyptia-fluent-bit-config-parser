@@ -7,7 +7,8 @@ export class TokenError extends Error {
 
   filePath: string;
   constructor(message: string, filePath: string, line: number, col: number) {
-    super(formatError(message, filePath, line, col));
+    const errorMsg = formatError(message, filePath, line, col);
+    super(errorMsg);
     this.name = 'TokenError';
     this.message = message;
     this.filePath = filePath;

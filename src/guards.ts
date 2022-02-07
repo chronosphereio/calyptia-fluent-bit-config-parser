@@ -14,7 +14,7 @@ export const isValidFluentBitSchemaType = (schema?: FluentBitSchemaType | null):
 
 export const isString = (value?: string): value is string => typeof value === 'string';
 
-export const isUsefulValidToken = (type?: string): boolean => isString(type) && !['space', 'comment'].includes(type);
+export const isUsefulToken = (type?: string): boolean => isString(type) && !['space', 'comment'].includes(type);
 
 export const isCommandType = (type?: string): type is COMMANDS =>
   isString(type) && Object.keys(COMMANDS).includes(type);

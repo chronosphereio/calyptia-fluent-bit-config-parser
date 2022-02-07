@@ -7,7 +7,7 @@ jest.mock('uuid', () => ({ v4: () => 'UNIQUE' }));
 describe('fluentBit', () => {
   it('Fails if config is empty', () => {
     expect(() => new FluentBitSchema('       ', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
-      '"Invalid config file"'
+      '"File is empty"'
     );
   });
 
@@ -16,32 +16,6 @@ describe('fluentBit', () => {
       '"This file is not a valid Fluent Bit config file"'
     );
   });
-  it('Fails if config has invalid commands', () => {
-    expect(
-      () =>
-        new FluentBitSchema(
-          `
-    [INVALID]
-        Name        tail
-        Tag         tail.01
-        Path        /var/log/system.log
-
-    [OUTPUT]
-        Name        splunk
-        Match       *
-        Host        127.0.0.1
-        Port        8088
-        TLS         On
-        TLS.Verify  Off
-        Message_Key my_key
-    `,
-          '/file/path.conf'
-        )
-    ).toThrowErrorMatchingInlineSnapshot(
-      '"2:6 Invalid command INVALID. Valid commands are OUTPUT,INPUT,FILTER,SERVICE,PARSER,CUSTOM"'
-    );
-  });
-
   it('Should ignore new line comments on AST', () => {
     const rawConfig = `
     [INPUT]
@@ -61,8 +35,7 @@ describe('fluentBit', () => {
     `;
     const config = new FluentBitSchema(rawConfig, '/file/path.conf');
     expect(config.schema).toMatchInlineSnapshot(`
-      Object {
-        "config": Array [
+        Array [
           Object {
             "command": "INPUT",
             "id": "UNIQUE",
@@ -85,13 +58,12 @@ describe('fluentBit', () => {
               "upload_timeout": "10m",
             },
           },
-        ],
-      }
+        ]
     `);
   });
   it.each(cases)('Parse config: %s', (filePath, rawConfig, expected) => {
     const config = new FluentBitSchema(rawConfig, filePath);
-    expect(config.schema).toMatchObject(expected);
+    expect(config.schema).toMatchObject(expected.config);
   });
 
   it.each(cases)('Returns source: %s', (filePath, rawConfig) => {
@@ -140,7 +112,7 @@ describe('fluentBit', () => {
     const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
 
     const config = new FluentBitSchema(rawConfig, filePath);
-    expect(config.AST).toMatchInlineSnapshot();
+    expect(config.schema).toMatchInlineSnapshot('Array []');
   });
 
   it.each(cases)('is %s, fluent-bit configuration?', (_name, rawConfig) => {

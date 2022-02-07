@@ -12,8 +12,8 @@ export type FluentBitSchemaType = {
   id: string;
   name?: string;
   command: COMMANDS;
-  optional?: Record<string, unknown>;
-} & { [key: string]: unknown };
+  optional?: { [key: string]: unknown };
+};
 export const FLUENTBIT_REGEX = /(?<![#][ ]*)\[[A-Z]{1,}\]/g;
 
 /** It will match @includes files as a valid Fluent Bit configuration.

@@ -1,12 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getFluentBitSchema } from './getSchema';
 import { COMMANDS, type FluentBitSchemaType } from './constants';
-import { isCommandType, isCustomBlock, isFluentBit, isUsefulValidToken, isValidFluentBitSchemaType } from './guards';
+import { isCommandType, isFluentBit, isUsefulToken } from './guards';
 import { keywords, states, Token } from 'moo';
 import { schemaToString } from './schemaToString';
 import { readFileSync, realpathSync } from 'fs';
 import { join } from 'path';
-import { basename } from 'path/posix';
+import { dirname, isAbsolute } from 'path/posix';
+import { TokenError } from './TokenError';
 function normalizeField(field: string) {
   const normalizedField = field.toLowerCase();
   return normalizedField === 'match_regex' ? 'match' : normalizedField;
@@ -19,7 +20,7 @@ enum TOKEN_TYPES {
   include = 'INCLUDE',
 }
 
-type FLUENT_BIT_TOKEN = Token & { directive?: string; filePath: string };
+type FLUENT_BIT_TOKEN = Token & { filePath: string };
 
 const stateSet = {
   main: {
@@ -46,30 +47,34 @@ const stateSet = {
 };
 export function tokenize(config: string, filePath: string): FLUENT_BIT_TOKEN[] {
   if (!config.replace(/\s/g, '')) {
-    throw new Error('Invalid config file');
+    throw new TokenError('File is empty', filePath, 0, 0);
   }
 
   if (!isFluentBit(config)) {
-    throw new Error('This file is not a valid Fluent Bit config file');
+    throw new TokenError('This file is not a valid Fluent Bit config file', filePath, 0, 0);
   }
 
   let tokens = [] as FLUENT_BIT_TOKEN[];
   const lexer = states(stateSet).reset(config);
 
   // We will expand every include first, looking for any missing paths and invalid tokens
+  // https://github.com/calyptia/fluent-bit-config-parser/issues/15
   for (const token of lexer) {
     if (token.type === TOKEN_TYPES.include) {
       const [, includeFilePath] = token.value.split(' ');
 
-      const fullPath = realpathSync(join(basename(filePath), includeFilePath));
+      const fullPath = realpathSync(join(dirname(filePath), includeFilePath));
+
+      let includeConfig = '';
 
       try {
-        const includeConfig = readFileSync(fullPath, { encoding: 'utf-8' });
-
-        tokens = [...tokens, ...tokenize(includeConfig, filePath)];
+        includeConfig = readFileSync(fullPath, { encoding: 'utf-8' });
       } catch (e) {
-        throw new Error(`${token.line}:${token.col} Path ${filePath}. Valid commands are ${Object.keys(COMMANDS)}`);
+        throw new TokenError('Can not read file', fullPath, 0, 0);
       }
+
+      const includeTokens = tokenize(includeConfig, filePath);
+      tokens = [...tokens, ...includeTokens];
     } else {
       tokens.push({ ...token, filePath });
     }
@@ -77,39 +82,39 @@ export function tokenize(config: string, filePath: string): FLUENT_BIT_TOKEN[] {
 
   return tokens;
 }
-export function parser(config: string, filePath: string) {
-  const tokens = tokenize(config, filePath);
-
+export function tokensToAST(tokens: Token[]): FluentBitSchemaType[] {
   const configBlocks = [] as FluentBitSchemaType[];
   let block = {} as FluentBitSchemaType;
   let command = undefined as COMMANDS | undefined;
 
   for (const token of tokens) {
     // Ignoring spaces and comments
-    if (!isUsefulValidToken(token.type)) {
+    if (!isUsefulToken(token.type)) {
       continue;
     }
 
-    if (token.type === TOKEN_TYPES.command) {
-      throw new Error(
-        `${token.line}:${token.col} Invalid command ${token.value}. Valid commands are ${Object.keys(COMMANDS)}`
-      );
-    }
     // If we find a valid command we begin collecting properties.
     if (isCommandType(token.type)) {
       command = token.value as COMMANDS;
-      block = { command, id: uuidv4() };
+      block = { command, id: uuidv4(), optional: {} };
       continue;
     }
 
     if (command) {
       if (token.type === TOKEN_TYPES.properties) {
         const [key, ...value] = token.value.split(' ');
+        const attrName = normalizeField(key);
+        const attrValue = value.join(' ');
 
-        block = {
-          ...block,
-          [normalizeField(key)]: value.join(' '),
-        };
+        if (attrName === 'name') {
+          block = { ...block, [attrName]: attrValue };
+        } else {
+          block = {
+            ...block,
+            optional: { ...block.optional, [attrName]: attrValue },
+          };
+        }
+
         continue;
       }
 
@@ -122,25 +127,28 @@ export function parser(config: string, filePath: string) {
     }
   }
 
-  configBlocks.push({ ...block });
+  return [...configBlocks, block];
+}
 
-  return configBlocks.filter((block) => isValidFluentBitSchemaType(block) && !isCustomBlock(block));
+function getFullPath(filePath: string) {
+  return isAbsolute(filePath) ? filePath : realpathSync(filePath);
 }
 
 export class FluentBitSchema {
   private _filePath: string;
   private _source: string;
-  private _ast: FluentBitSchemaType[];
+  private _tokens: Token[];
   constructor(source: string, filePath: string) {
     this._source = source;
     this._filePath = filePath;
-    this._ast = parser(source, filePath);
+
+    this._tokens = tokenize(source, getFullPath(filePath));
   }
   static isFluentBitConfiguration(source: string) {
     return isFluentBit(source);
   }
-  get AST() {
-    return this._ast;
+  get AST(): FluentBitSchemaType[] {
+    return tokensToAST(this._tokens);
   }
 
   get filePath() {
@@ -150,9 +158,9 @@ export class FluentBitSchema {
     return this._source;
   }
   get schema() {
-    return getFluentBitSchema(this._ast);
+    return getFluentBitSchema(this.AST);
   }
   toString(indent?: number) {
-    return schemaToString(this._ast, { propIndent: indent });
+    return schemaToString(this.schema, { propIndent: indent });
   }
 }

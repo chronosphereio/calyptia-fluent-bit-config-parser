@@ -70,7 +70,7 @@ export function tokenize(config: string, filePath: string, pathMemo = new Set())
 
         if (pathMemo.has(realPath)) {
           throw new TokenError(
-            `You are trying to include ${realPath}. Fluent Bit does not allow the a file to be included twice in the same configuration`,
+            `You are trying to include ${realPath}. Fluent Bit does not allow a file to be included twice in the same configuration`,
             filePath,
             token.line,
             token.col

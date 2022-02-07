@@ -70,7 +70,7 @@ export function tokenize(config: string, filePath: string): FluentBitToken[] {
 
         includeConfig = readFileSync(realPath, { encoding: 'utf-8' });
       } catch (e) {
-        throw new TokenError(`Can not read file, loading from ${filePath}`, fullPath, 0, 0);
+        throw new TokenError(`Can not read file, loading from ${filePath}`, fullPath, token.line, token.line);
       }
 
       const includeTokens = tokenize(includeConfig, fullPath);

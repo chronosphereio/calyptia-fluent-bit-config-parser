@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { FluentBitSchema } from '../index';
+import { TokenError } from '../src/TokenError';
 import { cases } from '../__fixtures__/fluentBitCases';
 
 jest.mock('uuid', () => ({ v4: () => 'UNIQUE' }));
@@ -7,13 +8,13 @@ jest.mock('uuid', () => ({ v4: () => 'UNIQUE' }));
 describe('fluentBit', () => {
   it('Fails if config is empty', () => {
     expect(() => new FluentBitSchema('       ', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
-      '"File is empty"'
+      '"/file/path.conf: 0:0 File is empty"'
     );
   });
 
   it('Fails if config has no fields', () => {
     expect(() => new FluentBitSchema('# some comment', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
-      '"This file is not a valid Fluent Bit config file"'
+      '"/file/path.conf: 0:0 This file is not a valid Fluent Bit config file"'
     );
   });
   it('Should ignore new line comments on AST', () => {
@@ -166,10 +167,20 @@ describe('fluentBit', () => {
   it('Fails retrieving a missing include (file not found) ', async () => {
     const filePath = './__fixtures__/nested/withFailingIncludes.conf';
     const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
-    const config = () => new FluentBitSchema(rawConfig, filePath);
-    expect(config).toThrowErrorMatchingInlineSnapshot(
-      '"Can not read file, loading from <PROJECT_ROOT>/__fixtures__/nested/withFailingIncludes.conf"'
-    );
+    try {
+      new FluentBitSchema(rawConfig, filePath);
+    } catch (e) {
+      expect(e).toBeInstanceOf(TokenError);
+      const error = e as TokenError;
+      expect(error.line).toBe(3);
+      expect(error.col).toBe(3);
+      expect(error.message).toMatchInlineSnapshot(
+        '"<PROJECT_ROOT>/__fixtures__/nested/nested/notexistentInclude.conf: 3:3 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/nested/withFailingIncludes.conf"'
+      );
+      expect(error.filePath).toMatchInlineSnapshot(
+        '"<PROJECT_ROOT>/__fixtures__/nested/nested/notexistentInclude.conf"'
+      );
+    }
   });
   it.each(cases)('is %s, fluent-bit configuration?', (_name, rawConfig) => {
     expect(FluentBitSchema.isFluentBitConfiguration(rawConfig)).toBe(true);

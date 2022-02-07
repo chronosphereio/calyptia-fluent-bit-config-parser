@@ -110,13 +110,13 @@ describe('fluentBit', () => {
   });
 
   it('Parses global @includes in configuration', async () => {
-    const filePath = './__fixtures__/nested/withIncludes.conf';
+    const filePath = './__fixtures__/includes/withIncludes.conf';
     const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
     const config = new FluentBitSchema(rawConfig, filePath);
     expect(config.AST).toMatchInlineSnapshot(`
       Array [
         Object {
-          "__filePath": "<PROJECT_ROOT>/__fixtures__/nested/nested/tail.conf",
+          "__filePath": "<PROJECT_ROOT>/__fixtures__/includes/nested/tail.conf",
           "command": "INPUT",
           "id": "UNIQUE",
           "name": "tail",
@@ -132,7 +132,7 @@ describe('fluentBit', () => {
           },
         },
         Object {
-          "__filePath": "<PROJECT_ROOT>/__fixtures__/nested/nested/service.conf",
+          "__filePath": "<PROJECT_ROOT>/__fixtures__/includes/nested/service.conf",
           "command": "SERVICE",
           "id": "UNIQUE",
           "optional": Object {
@@ -146,7 +146,7 @@ describe('fluentBit', () => {
           },
         },
         Object {
-          "__filePath": "<PROJECT_ROOT>/__fixtures__/nested/withIncludes.conf",
+          "__filePath": "<PROJECT_ROOT>/__fixtures__/includes/withIncludes.conf",
           "command": "OUTPUT",
           "id": "UNIQUE",
           "name": "loki",
@@ -165,7 +165,7 @@ describe('fluentBit', () => {
   });
 
   it('Fails retrieving a repeated include (can not include file twice) ', async () => {
-    const filePath = '__fixtures__/nested/withDuplicatedIncludes.conf';
+    const filePath = '__fixtures__/includes/withDuplicatedIncludes.conf';
     const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
     try {
       new FluentBitSchema(rawConfig, filePath);
@@ -175,13 +175,15 @@ describe('fluentBit', () => {
       expect(error.line).toBe(9);
       expect(error.col).toBe(1);
       expect(error.message).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/nested/withDuplicatedIncludes.conf: 9:1 You are trying to include <PROJECT_ROOT>/__fixtures__/nested/nested/tail.conf. Fluent Bit does not allow the a file to be included twice in the same configuration"'
+        '"<PROJECT_ROOT>/__fixtures__/includes/withDuplicatedIncludes.conf: 9:1 You are trying to include <PROJECT_ROOT>/__fixtures__/includes/nested/tail.conf. Fluent Bit does not allow the a file to be included twice in the same configuration"'
       );
-      expect(error.filePath).toMatchInlineSnapshot('"<PROJECT_ROOT>/__fixtures__/nested/withDuplicatedIncludes.conf"');
+      expect(error.filePath).toMatchInlineSnapshot(
+        '"<PROJECT_ROOT>/__fixtures__/includes/withDuplicatedIncludes.conf"'
+      );
     }
   });
   it('Fails retrieving a missing include (file not found) ', async () => {
-    const filePath = './__fixtures__/nested/withFailingIncludes.conf';
+    const filePath = './__fixtures__/includes/withFailingIncludes.conf';
     const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
     try {
       new FluentBitSchema(rawConfig, filePath);
@@ -191,10 +193,10 @@ describe('fluentBit', () => {
       expect(error.line).toBe(3);
       expect(error.col).toBe(1);
       expect(error.message).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/nested/nested/notexistentInclude.conf: 3:1 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/nested/withFailingIncludes.conf"'
+        '"<PROJECT_ROOT>/__fixtures__/includes/nested/notexistentInclude.conf: 3:1 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/includes/withFailingIncludes.conf"'
       );
       expect(error.filePath).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/nested/nested/notexistentInclude.conf"'
+        '"<PROJECT_ROOT>/__fixtures__/includes/nested/notexistentInclude.conf"'
       );
     }
   });

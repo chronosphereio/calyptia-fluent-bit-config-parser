@@ -44,7 +44,7 @@ const stateSet = {
     [TOKEN_TYPES.closeBlock]: { match: ']', push: 'main' },
   },
 };
-export function tokenize(config: string, filePath: string): FluentBitToken[] {
+export function tokenize(config: string, filePath: string, pathMemo = new Set()): FluentBitToken[] {
   if (!config.replace(/\s/g, '')) {
     throw new TokenError('File is empty', filePath, 0, 0);
   }
@@ -68,12 +68,25 @@ export function tokenize(config: string, filePath: string): FluentBitToken[] {
       try {
         const realPath = realpathSync(fullPath);
 
+        if (pathMemo.has(realPath)) {
+          throw new TokenError(
+            `You are trying to include ${realPath}. Fluent Bit does not allow the a file to be included twice in the same configuration`,
+            filePath,
+            token.line,
+            token.col
+          );
+        }
+
         includeConfig = readFileSync(realPath, { encoding: 'utf-8' });
+        pathMemo.add(realPath);
       } catch (e) {
-        throw new TokenError(`Can not read file, loading from ${filePath}`, fullPath, token.line, token.line);
+        if (e instanceof TokenError) {
+          throw e;
+        }
+        throw new TokenError(`Can not read file, loading from ${filePath}`, fullPath, token.line, token.col);
       }
 
-      const includeTokens = tokenize(includeConfig, fullPath);
+      const includeTokens = tokenize(includeConfig, fullPath, pathMemo);
       tokens = [...tokens, ...includeTokens];
     } else {
       tokens.push({ ...token, filePath });

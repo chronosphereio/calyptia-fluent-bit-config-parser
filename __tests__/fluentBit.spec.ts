@@ -17,7 +17,7 @@ describe('fluentBit', () => {
       '"/file/path.conf: 0:0 This file is not a valid Fluent Bit config file"'
     );
   });
-  it('Should ignore new line comments on AST', () => {
+  it('Should ignore new line comments on the Schema', () => {
     const rawConfig = `
     [INPUT]
         # new line comment
@@ -164,6 +164,22 @@ describe('fluentBit', () => {
     `);
   });
 
+  it('Fails retrieving a repeated include (can not include file twice) ', async () => {
+    const filePath = '__fixtures__/nested/withDuplicatedIncludes.conf';
+    const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
+    try {
+      new FluentBitSchema(rawConfig, filePath);
+    } catch (e) {
+      expect(e).toBeInstanceOf(TokenError);
+      const error = e as TokenError;
+      expect(error.line).toBe(9);
+      expect(error.col).toBe(1);
+      expect(error.message).toMatchInlineSnapshot(
+        '"<PROJECT_ROOT>/__fixtures__/nested/withDuplicatedIncludes.conf: 9:1 You are trying to include <PROJECT_ROOT>/__fixtures__/nested/nested/tail.conf. Fluent Bit does not allow the a file to be included twice in the same configuration"'
+      );
+      expect(error.filePath).toMatchInlineSnapshot('"<PROJECT_ROOT>/__fixtures__/nested/withDuplicatedIncludes.conf"');
+    }
+  });
   it('Fails retrieving a missing include (file not found) ', async () => {
     const filePath = './__fixtures__/nested/withFailingIncludes.conf';
     const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
@@ -173,9 +189,9 @@ describe('fluentBit', () => {
       expect(e).toBeInstanceOf(TokenError);
       const error = e as TokenError;
       expect(error.line).toBe(3);
-      expect(error.col).toBe(3);
+      expect(error.col).toBe(1);
       expect(error.message).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/nested/nested/notexistentInclude.conf: 3:3 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/nested/withFailingIncludes.conf"'
+        '"<PROJECT_ROOT>/__fixtures__/nested/nested/notexistentInclude.conf: 3:1 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/nested/withFailingIncludes.conf"'
       );
       expect(error.filePath).toMatchInlineSnapshot(
         '"<PROJECT_ROOT>/__fixtures__/nested/nested/notexistentInclude.conf"'

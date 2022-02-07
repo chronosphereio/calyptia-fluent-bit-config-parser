@@ -4,6 +4,8 @@ import {
   type FluentBitSchemaType,
   EXCLUDED_TAGS,
   FLUENTBIT_INCLUDE_REGEX,
+  CUSTOM_SECTIONS_NAMES,
+  TOKEN_TYPES,
 } from './constants';
 
 export const isFluentBit = (config: string) =>
@@ -14,10 +16,12 @@ export const isValidFluentBitSection = (schema?: FluentBitSchemaType | null): sc
 
 export const isString = (value?: string): value is string => typeof value === 'string';
 
-export const isUsefulToken = (type?: string): boolean => isString(type) && !['space', 'comment'].includes(type);
+export const isUsefulToken = (type?: string): boolean =>
+  isString(type) && !([TOKEN_TYPES.SPACE, TOKEN_TYPES.COMMENT] as string[]).includes(type);
 
 export const isCommandType = (type?: string): type is COMMANDS =>
   isString(type) && Object.keys(COMMANDS).includes(type);
 
-export const isCustomSection = (block: FluentBitSchemaType) =>
-  !!block.name && (block.name.includes('fluentbit_metrics') || block.name.includes('calyptia'));
+export const isCustomSectionName = (block: FluentBitSchemaType) =>
+  !!isString(block.name) &&
+  (block.name.includes(CUSTOM_SECTIONS_NAMES.FLUENTBIT_METRICS) || block.name.includes(CUSTOM_SECTIONS_NAMES.CALYPTIA));

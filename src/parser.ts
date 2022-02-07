@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { COMMANDS, FluentBitSection, type FluentBitSchemaType } from './constants';
-import { isCommandType, isCustomSection, isFluentBit, isUsefulToken, isValidFluentBitSection } from './guards';
+import { COMMANDS, FluentBitSection, TOKEN_TYPES, type FluentBitSchemaType } from './constants';
+import { isCommandType, isCustomSectionName, isFluentBit, isUsefulToken, isValidFluentBitSection } from './guards';
 import { keywords, states, Token } from 'moo';
 import { schemaToString } from './schemaToString';
 import { readFileSync, realpathSync } from 'fs';
@@ -10,13 +10,6 @@ import { TokenError } from './TokenError';
 function normalizeField(field: string) {
   const normalizedField = field.toLowerCase();
   return normalizedField === 'match_regex' ? 'match' : normalizedField;
-}
-enum TOKEN_TYPES {
-  properties = 'PROPERTIES',
-  closeBlock = 'CLOSE_BLOCK',
-  openBlock = 'OPEN_BLOCK',
-  command = 'COMMAND',
-  include = 'INCLUDE',
 }
 
 type FluentBitToken = Token & { filePath: string };
@@ -32,15 +25,15 @@ const stateSet = {
         lineBreaks: true,
       },
     ],
-    space: { match: /\s+/, lineBreaks: true },
-    comment: { match: /#.*/, lineBreaks: true },
+    [TOKEN_TYPES.SPACE]: { match: /\s+/, lineBreaks: true },
+    [TOKEN_TYPES.COMMENT]: { match: /#.*/, lineBreaks: true },
   },
   block: {
     [TOKEN_TYPES.command]: {
       match: /\w+/,
       type: keywords(COMMANDS),
     },
-    comment: { match: /#.*/, lineBreaks: true },
+    [TOKEN_TYPES.COMMENT]: { match: /#.*/, lineBreaks: true },
     [TOKEN_TYPES.closeBlock]: { match: ']', push: 'main' },
   },
 };
@@ -172,9 +165,9 @@ export class FluentBitSchema {
   get schema() {
     const test = (node: FluentBitSchemaType) => {
       const isValidBlock = isValidFluentBitSection(node);
-      const isNotCustomBlock = !isCustomSection(node);
+      const isNotCustomSectionName = !isCustomSectionName(node);
 
-      return isValidBlock && isNotCustomBlock;
+      return isValidBlock && isNotCustomSectionName;
     };
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

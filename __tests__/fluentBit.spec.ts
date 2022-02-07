@@ -175,7 +175,7 @@ describe('fluentBit', () => {
       expect(error.line).toBe(9);
       expect(error.col).toBe(1);
       expect(error.message).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/includes/withDuplicatedIncludes.conf: 9:1 You are trying to include <PROJECT_ROOT>/__fixtures__/includes/nested/tail.conf. Fluent Bit does not allow the a file to be included twice in the same configuration"'
+        '"<PROJECT_ROOT>/__fixtures__/includes/withDuplicatedIncludes.conf: 9:1 You are trying to include <PROJECT_ROOT>/__fixtures__/includes/nested/tail.conf. Fluent Bit does not allow a file to be included twice in the same configuration"'
       );
       expect(error.filePath).toMatchInlineSnapshot(
         '"<PROJECT_ROOT>/__fixtures__/includes/withDuplicatedIncludes.conf"'

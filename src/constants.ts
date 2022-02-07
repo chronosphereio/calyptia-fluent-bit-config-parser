@@ -8,7 +8,15 @@ export enum COMMANDS {
   PARSER = 'PARSER',
   CUSTOM = 'CUSTOM',
 }
-
+export enum TOKEN_TYPES {
+  properties = 'PROPERTIES',
+  closeBlock = 'CLOSE_BLOCK',
+  openBlock = 'OPEN_BLOCK',
+  command = 'COMMAND',
+  include = 'INCLUDE',
+  SPACE = 'SPACE',
+  COMMENT = 'COMMENT',
+}
 export type FluentBitSection = {
   id: string;
   name?: string;
@@ -36,3 +44,8 @@ export const NO_STYLES_IN_TABLE = {
   },
   drawHorizontalLine: (): boolean => false,
 };
+
+export enum CUSTOM_SECTIONS_NAMES {
+  FLUENTBIT_METRICS = 'fluentbit_metrics',
+  CALYPTIA = 'calyptia',
+}

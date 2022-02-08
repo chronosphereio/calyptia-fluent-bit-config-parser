@@ -1,3 +1,4 @@
+import type { Token } from 'moo';
 import { getBorderCharacters } from 'table';
 
 export enum COMMANDS {
@@ -27,6 +28,8 @@ export type FluentBitSection = {
 export interface FluentBitSchemaType extends FluentBitSection {
   __filePath: string;
 }
+
+export type FluentBitToken = Token & { filePath: string };
 export const FLUENTBIT_REGEX = /(?<![#][ ]*)\[[A-Z]{1,}\]/g;
 
 /** It will match @includes files as a valid Fluent Bit configuration.

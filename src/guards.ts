@@ -5,7 +5,6 @@ import {
   EXCLUDED_TAGS,
   FLUENTBIT_INCLUDE_REGEX,
   CUSTOM_SECTIONS_NAMES,
-  TOKEN_TYPES,
 } from './constants';
 
 export const isFluentBit = (config: string) =>
@@ -15,9 +14,6 @@ export const isValidFluentBitSection = (schema?: FluentBitSchemaType | null): sc
   !!schema && !EXCLUDED_TAGS.has(schema.command.toLowerCase());
 
 export const isString = (value?: string): value is string => typeof value === 'string';
-
-export const isUsefulToken = (type?: string): boolean =>
-  isString(type) && !([TOKEN_TYPES.SPACE, TOKEN_TYPES.COMMENT] as string[]).includes(type);
 
 export const isCommandType = (type?: string): type is COMMANDS =>
   isString(type) && Object.keys(COMMANDS).includes(type);

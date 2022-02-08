@@ -1,18 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
-import { COMMANDS, FluentBitSection, TOKEN_TYPES, type FluentBitSchemaType } from './constants';
-import { isCommandType, isCustomSectionName, isFluentBit, isUsefulToken, isValidFluentBitSection } from './guards';
-import { keywords, states, Token } from 'moo';
+import { COMMANDS, FluentBitSection, FluentBitToken, TOKEN_TYPES, type FluentBitSchemaType } from './constants';
+import { isCommandType, isCustomSectionName, isFluentBit, isValidFluentBitSection } from './guards';
+import { keywords, states } from 'moo';
 import { schemaToString } from './schemaToString';
 import { readFileSync, realpathSync } from 'fs';
 import { join } from 'path';
 import { dirname, isAbsolute } from 'path/posix';
 import { TokenError } from './TokenError';
+import { TokenIndex } from './TokenIndex';
 function normalizeField(field: string) {
   const normalizedField = field.toLowerCase();
   return normalizedField === 'match_regex' ? 'match' : normalizedField;
 }
-
-type FluentBitToken = Token & { filePath: string };
 
 const stateSet = {
   main: {
@@ -97,21 +96,31 @@ export function tokenize(config: string, filePath: string, pathMemo = new Set())
 
   return tokens;
 }
-export function tokensToAST(tokens: FluentBitToken[]): FluentBitSchemaType[] {
+export function tokensToAST(tokens: FluentBitToken[], tokenIndex: TokenIndex): FluentBitSchemaType[] {
   const configBlocks = [] as FluentBitSchemaType[];
   let block = {} as FluentBitSchemaType;
   let command = undefined as COMMANDS | undefined;
 
   for (const token of tokens) {
-    // Ignoring spaces and comments
-    if (!isUsefulToken(token.type)) {
+    if (token.type === TOKEN_TYPES.SPACE) {
+      continue;
+    }
+    if (token.type === TOKEN_TYPES.openBlock) {
+      if (command) {
+        configBlocks.push(block);
+      }
+      block = { id: uuidv4() } as FluentBitSchemaType;
+      tokenIndex.set(block.id, token);
+      command = undefined;
       continue;
     }
 
     // If we find a valid command we begin collecting properties.
     if (isCommandType(token.type)) {
       command = token.value as COMMANDS;
-      block = { command, id: uuidv4(), optional: {}, __filePath: token.filePath };
+      block = { ...block, command, optional: {}, __filePath: token.filePath };
+
+      tokenIndex.set(block.id, token);
       continue;
     }
 
@@ -129,16 +138,8 @@ export function tokensToAST(tokens: FluentBitToken[]): FluentBitSchemaType[] {
             optional: { ...block.optional, [attrName]: attrValue },
           };
         }
-
-        continue;
       }
-
-      if (token.type === TOKEN_TYPES.openBlock) {
-        configBlocks.push({ ...block });
-        block = {} as FluentBitSchemaType;
-        command = undefined;
-        continue;
-      }
+      tokenIndex.set(block.id, token);
     }
   }
 
@@ -153,17 +154,19 @@ export class FluentBitSchema {
   private _filePath: string;
   private _source: string;
   private _tokens: FluentBitToken[];
+  private _tokenIndex: TokenIndex;
   constructor(source: string, filePath: string) {
     this._source = source;
     this._filePath = filePath;
-
     this._tokens = tokenize(source, getFullPath(filePath));
+    this._tokenIndex = new TokenIndex();
   }
   static isFluentBitConfiguration(source: string) {
     return isFluentBit(source);
   }
   get AST(): FluentBitSchemaType[] {
-    return tokensToAST(this._tokens);
+    this._tokenIndex.clear();
+    return tokensToAST(this._tokens, this._tokenIndex);
   }
   get filePath() {
     return this._filePath;
@@ -181,6 +184,10 @@ export class FluentBitSchema {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return this.AST.filter(test).map(({ __filePath, ...rest }) => ({ ...rest } as FluentBitSection));
+  }
+
+  getTokensBySectionId(sectionId: string) {
+    return this._tokenIndex.get(sectionId);
   }
   toString(indent?: number) {
     return schemaToString(this.schema, { propIndent: indent });

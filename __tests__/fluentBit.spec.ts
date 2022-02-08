@@ -6,19 +6,9 @@ import { cases } from '../__fixtures__/fluentBitCases';
 jest.mock('uuid', () => ({ v4: () => 'UNIQUE' }));
 
 describe('fluentBit', () => {
-  it('Fails if config is empty', () => {
-    expect(() => new FluentBitSchema('       ', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
-      '"/file/path.conf: 0:0 File is empty"'
-    );
-  });
-
-  it('Fails if config has no fields', () => {
-    expect(() => new FluentBitSchema('# some comment', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
-      '"/file/path.conf: 0:0 This file is not a valid Fluent Bit config file"'
-    );
-  });
-  it('Should ignore new line comments on the Schema', () => {
-    const rawConfig = `
+  describe('Basic features', () => {
+    it('Should ignore new line comments on the Schema', () => {
+      const rawConfig = `
     [INPUT]
         # new line comment
         Name        tail
@@ -34,8 +24,8 @@ describe('fluentBit', () => {
         total_file_size 50M
         upload_timeout 10m 
     `;
-    const config = new FluentBitSchema(rawConfig, '/file/path.conf');
-    expect(config.schema).toMatchInlineSnapshot(`
+      const config = new FluentBitSchema(rawConfig, '/file/path.conf');
+      expect(config.schema).toMatchInlineSnapshot(`
         Array [
           Object {
             "command": "INPUT",
@@ -61,26 +51,27 @@ describe('fluentBit', () => {
           },
         ]
     `);
-  });
-  it.each(cases)('Parse config: %s', (filePath, rawConfig, expected) => {
-    const config = new FluentBitSchema(rawConfig, filePath);
-    expect(config.filePath).toMatch(filePath);
-    expect(config.schema).toMatchObject(expected.config);
-  });
+    });
+    it('Fails if config has no fields', () => {
+      expect(() => new FluentBitSchema('# some comment', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
+        '"/file/path.conf: 0:0 This file is not a valid Fluent Bit config file"'
+      );
+    });
+    it('Fails if config is empty', () => {
+      expect(() => new FluentBitSchema('       ', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
+        '"/file/path.conf: 0:0 File is empty"'
+      );
+    });
 
-  it.each(cases)('Returns source: %s', (filePath, rawConfig) => {
-    const config = new FluentBitSchema(rawConfig, filePath);
-    expect(config.source).toBe(rawConfig);
-  });
-  it('should transform schema to string for basic.conf', () => {
-    const [filePath, rawConfig] = cases[0];
+    it('Should transform schema to string for basic.conf', () => {
+      const [filePath, rawConfig] = cases[0];
 
-    // We need to normalize given that SchemaToString will return values toLowerCase + spaces normalized.
-    // const normalize = (config: string) => config.replace(/\s/g, '').toLocaleLowerCase();
+      // We need to normalize given that SchemaToString will return values toLowerCase + spaces normalized.
+      // const normalize = (config: string) => config.replace(/\s/g, '').toLocaleLowerCase();
 
-    const config = new FluentBitSchema(rawConfig, filePath);
+      const config = new FluentBitSchema(rawConfig, filePath);
 
-    expect(config.toString()).toMatchInlineSnapshot(`
+      expect(config.toString()).toMatchInlineSnapshot(`
       "                                                                   
       [INPUT]                                                            
         name            tail # some comment                              
@@ -107,13 +98,58 @@ describe('fluentBit', () => {
         add_label       pipeline_id a21fd551-095b-4271-acf0-c2fdb3161b84 
       "
     `);
+    });
+    it.each(cases)('is %s, fluent-bit configuration?', (_name, rawConfig) => {
+      expect(FluentBitSchema.isFluentBitConfiguration(rawConfig)).toBe(true);
+    });
+
+    it('fluentD.conf should not be fluent-bit configuration', () => {
+      const fluentDConfig = `
+    #  Receive events from 24224/tcp
+    # This is used by log forwarding and the fluent-cat command
+    <source>
+      @type forward
+      port 24224
+    </source>
+    
+    # http://<ip>:9880/myapp.access?json={"event":"data"}
+    <source>
+      @type http
+      port 9880
+    </source>
+    
+    # Match events tagged with "myapp.access" and
+    # store them to /var/log/fluent/access.%Y-%m-%d
+    # Of course, you can control how you partition your data
+    # with the time_slice_format option.
+    <match myapp.access>
+      @type file
+      path /var/log/fluent/access
+    </match>
+`;
+      expect(FluentBitSchema.isFluentBitConfiguration(fluentDConfig)).toBe(false);
+    });
   });
 
-  it('Parses global @includes in configuration', async () => {
-    const filePath = './__fixtures__/includes/withIncludes.conf';
-    const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
-    const config = new FluentBitSchema(rawConfig, filePath);
-    expect(config.AST).toMatchInlineSnapshot(`
+  describe('Parse cases', () => {
+    it.each(cases)('Parse config: %s', (filePath, rawConfig, expected) => {
+      const config = new FluentBitSchema(rawConfig, filePath);
+      expect(config.filePath).toMatch(filePath);
+      expect(config.schema).toMatchObject(expected.config);
+    });
+
+    it.each(cases)('Returns source: %s', (filePath, rawConfig) => {
+      const config = new FluentBitSchema(rawConfig, filePath);
+      expect(config.source).toBe(rawConfig);
+    });
+  });
+
+  describe('Directive: @includes', () => {
+    it('Parses global @includes in configuration', async () => {
+      const filePath = './__fixtures__/includes/withIncludes.conf';
+      const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
+      const config = new FluentBitSchema(rawConfig, filePath);
+      expect(config.AST).toMatchInlineSnapshot(`
       Array [
         Object {
           "__filePath": "<PROJECT_ROOT>/__fixtures__/includes/nested/tail.conf",
@@ -162,6 +198,61 @@ describe('fluentBit', () => {
         },
       ]
     `);
+    });
+    it('Fails retrieving an include that contains more than a single path as a value', async () => {
+      const filePath = '__fixtures__/includes/withWrongIncludeValue.conf';
+      const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
+      try {
+        new FluentBitSchema(rawConfig, filePath);
+      } catch (e) {
+        expect(e).toBeInstanceOf(TokenError);
+        const error = e as TokenError;
+        expect(error.line).toBe(3);
+        expect(error.col).toBe(1);
+        expect(error.message).toMatchInlineSnapshot(
+          '"<PROJECT_ROOT>/__fixtures__/includes/withWrongIncludeValue.conf: 3:1 You are trying to include nested/tail.conf, but we also found more arguments (shouldNotHaveAnytingElse). Includes can only have a single value (ex: @includes path/to/a/file)"'
+        );
+        expect(error.filePath).toMatchInlineSnapshot(
+          '"<PROJECT_ROOT>/__fixtures__/includes/withWrongIncludeValue.conf"'
+        );
+      }
+    });
+    it('Fails retrieving a repeated include (can not include file twice) ', async () => {
+      const filePath = '__fixtures__/includes/withDuplicatedIncludes.conf';
+      const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
+      try {
+        new FluentBitSchema(rawConfig, filePath);
+      } catch (e) {
+        expect(e).toBeInstanceOf(TokenError);
+        const error = e as TokenError;
+        expect(error.line).toBe(9);
+        expect(error.col).toBe(1);
+        expect(error.message).toMatchInlineSnapshot(
+          '"<PROJECT_ROOT>/__fixtures__/includes/withDuplicatedIncludes.conf: 9:1 You are trying to include <PROJECT_ROOT>/__fixtures__/includes/nested/tail.conf. Fluent Bit does not allow a file to be included twice in the same configuration"'
+        );
+        expect(error.filePath).toMatchInlineSnapshot(
+          '"<PROJECT_ROOT>/__fixtures__/includes/withDuplicatedIncludes.conf"'
+        );
+      }
+    });
+    it('Fails retrieving a missing include (file not found) ', async () => {
+      const filePath = './__fixtures__/includes/withFailingIncludes.conf';
+      const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
+      try {
+        new FluentBitSchema(rawConfig, filePath);
+      } catch (e) {
+        expect(e).toBeInstanceOf(TokenError);
+        const error = e as TokenError;
+        expect(error.line).toBe(3);
+        expect(error.col).toBe(1);
+        expect(error.message).toMatchInlineSnapshot(
+          '"<PROJECT_ROOT>/__fixtures__/includes/nested/notExistentInclude.conf: 3:1 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/includes/withFailingIncludes.conf "'
+        );
+        expect(error.filePath).toMatchInlineSnapshot(
+          '"<PROJECT_ROOT>/__fixtures__/includes/nested/notExistentInclude.conf"'
+        );
+      }
+    });
   });
 
   it('Simpler section to tokens.', async () => {
@@ -186,87 +277,5 @@ describe('fluentBit', () => {
     const ast = config.AST;
 
     expect(config.getTokensBySectionId(ast[1].id)).toMatchSnapshot();
-  });
-  it('Fails retrieving an include that contains more than a single path as a value', async () => {
-    const filePath = '__fixtures__/includes/withWrongIncludeValue.conf';
-    const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
-    try {
-      new FluentBitSchema(rawConfig, filePath);
-    } catch (e) {
-      expect(e).toBeInstanceOf(TokenError);
-      const error = e as TokenError;
-      expect(error.line).toBe(3);
-      expect(error.col).toBe(1);
-      expect(error.message).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/includes/withWrongIncludeValue.conf: 3:1 You are trying to include nested/tail.conf, but we also found more arguments (shouldNotHaveAnytingElse). Includes can only have a single value (ex: @includes path/to/a/file)"'
-      );
-      expect(error.filePath).toMatchInlineSnapshot('"<PROJECT_ROOT>/__fixtures__/includes/withWrongIncludeValue.conf"');
-    }
-  });
-  it('Fails retrieving a repeated include (can not include file twice) ', async () => {
-    const filePath = '__fixtures__/includes/withDuplicatedIncludes.conf';
-    const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
-    try {
-      new FluentBitSchema(rawConfig, filePath);
-    } catch (e) {
-      expect(e).toBeInstanceOf(TokenError);
-      const error = e as TokenError;
-      expect(error.line).toBe(9);
-      expect(error.col).toBe(1);
-      expect(error.message).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/includes/withDuplicatedIncludes.conf: 9:1 You are trying to include <PROJECT_ROOT>/__fixtures__/includes/nested/tail.conf. Fluent Bit does not allow a file to be included twice in the same configuration"'
-      );
-      expect(error.filePath).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/includes/withDuplicatedIncludes.conf"'
-      );
-    }
-  });
-  it('Fails retrieving a missing include (file not found) ', async () => {
-    const filePath = './__fixtures__/includes/withFailingIncludes.conf';
-    const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
-    try {
-      new FluentBitSchema(rawConfig, filePath);
-    } catch (e) {
-      expect(e).toBeInstanceOf(TokenError);
-      const error = e as TokenError;
-      expect(error.line).toBe(3);
-      expect(error.col).toBe(1);
-      expect(error.message).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/includes/nested/notExistentInclude.conf: 3:1 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/includes/withFailingIncludes.conf "'
-      );
-      expect(error.filePath).toMatchInlineSnapshot(
-        '"<PROJECT_ROOT>/__fixtures__/includes/nested/notExistentInclude.conf"'
-      );
-    }
-  });
-  it.each(cases)('is %s, fluent-bit configuration?', (_name, rawConfig) => {
-    expect(FluentBitSchema.isFluentBitConfiguration(rawConfig)).toBe(true);
-  });
-
-  it('fluentD.conf should not be fluent-bit configuration', () => {
-    const fluentDConfig = `
-    #  Receive events from 24224/tcp
-    # This is used by log forwarding and the fluent-cat command
-    <source>
-      @type forward
-      port 24224
-    </source>
-    
-    # http://<ip>:9880/myapp.access?json={"event":"data"}
-    <source>
-      @type http
-      port 9880
-    </source>
-    
-    # Match events tagged with "myapp.access" and
-    # store them to /var/log/fluent/access.%Y-%m-%d
-    # Of course, you can control how you partition your data
-    # with the time_slice_format option.
-    <match myapp.access>
-      @type file
-      path /var/log/fluent/access
-    </match>
-`;
-    expect(FluentBitSchema.isFluentBitConfiguration(fluentDConfig)).toBe(false);
   });
 });

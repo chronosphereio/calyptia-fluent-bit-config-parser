@@ -1,5 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
-import { COMMANDS, FluentBitSection, FluentBitToken, TOKEN_TYPES, type FluentBitSchemaType } from './constants';
+import {
+  COMMANDS,
+  FluentBitSection,
+  FluentBitToken,
+  TOKEN_TYPES,
+  TOKEN_TYPES_DIRECTIVES,
+  type FluentBitSchemaType,
+} from './constants';
 import { isCommandType, isCustomSectionName, isFluentBit, isValidFluentBitSection } from './guards';
 import { keywords, states } from 'moo';
 import { schemaToString } from './schemaToString';
@@ -8,15 +15,34 @@ import { join } from 'path';
 import { dirname, isAbsolute } from 'path/posix';
 import { TokenError } from './TokenError';
 import { TokenIndex } from './TokenIndex';
+
 function normalizeField(field: string) {
   const normalizedField = field.toLowerCase();
   return normalizedField === 'match_regex' ? 'match' : normalizedField;
 }
 
+const caseInsensitiveKeywords = (defs: Record<string, string>) => {
+  const keys = keywords(defs);
+  return (value: string) => {
+    const matches = value.match(/@(\w+)\s+\w+/) || [];
+    const lala = keys(matches[1].toUpperCase());
+    return lala;
+  };
+};
+
 const stateSet = {
   main: {
     [TOKEN_TYPES.OPEN_BLOCK]: { match: '[', push: 'block' },
-    [TOKEN_TYPES.INCLUDE]: { match: /@include+\s.*/, lineBreak: true },
+    [TOKEN_TYPES.DIRECTIVES]: [
+      {
+        match: /@\w+\s+.*/,
+        type: caseInsensitiveKeywords(TOKEN_TYPES_DIRECTIVES),
+        value: (value: string) => {
+          const [, directive, ...rest] = value.trim().split(/(@\w+)/i);
+          return `${directive.toUpperCase()} ${rest.join('').trim()}`;
+        },
+      },
+    ],
     [TOKEN_TYPES.PROPERTIES]: [
       {
         match: /\w+[-.*\d\w]+\s.*/,
@@ -36,7 +62,12 @@ const stateSet = {
     [TOKEN_TYPES.CLOSE_BLOCK]: { match: ']', push: 'main' },
   },
 };
-export function tokenize(config: string, filePath: string, pathMemo = new Set()): FluentBitToken[] {
+export function tokenize(
+  config: string,
+  filePath: string,
+  directives: FluentBitToken[],
+  pathMemo = new Set()
+): FluentBitToken[] {
   if (!config.replace(/\s/g, '')) {
     throw new TokenError('File is empty', filePath, 0, 0);
   }
@@ -48,11 +79,26 @@ export function tokenize(config: string, filePath: string, pathMemo = new Set())
   let tokens = [] as FluentBitToken[];
   const lexer = states(stateSet).reset(config);
 
-  // We will expand every include first, looking for any missing paths and invalid tokens
+  // We will expand every @INCLUDE first, looking for any missing paths and invalid tokens
   // https://github.com/calyptia/fluent-bit-config-parser/issues/15
+  // We will also validate @SET directive
   for (const token of lexer) {
-    if (token.type === TOKEN_TYPES.INCLUDE) {
-      const [, includeFilePath, ...rest] = token.value.split(' ');
+    if (token.type === TOKEN_TYPES.DIRECTIVES) {
+      throw new TokenError(
+        `You have defined a Directive not supported (${token.text}). The supported directives are: ${Object.keys(
+          TOKEN_TYPES_DIRECTIVES
+        )}`,
+        filePath,
+        token.line,
+        token.col
+      );
+    }
+    if (token.type === TOKEN_TYPES_DIRECTIVES.SET) {
+      directives.push({ ...token, filePath });
+    }
+
+    if (token.type === TOKEN_TYPES_DIRECTIVES.INCLUDE) {
+      const [, includeFilePath, ...rest] = token.text.split(' ');
 
       // In case we find more arguments in the value given to the include directive we will fail with some guidance in the error.
       if (rest.length) {
@@ -87,7 +133,8 @@ export function tokenize(config: string, filePath: string, pathMemo = new Set())
         throw new TokenError(`Can not read file, loading from ${filePath} `, fullPath, token.line, token.col);
       }
 
-      const includeTokens = tokenize(includeConfig, fullPath, pathMemo);
+      directives.push({ ...token, filePath: fullPath });
+      const includeTokens = tokenize(includeConfig, fullPath, directives, pathMemo);
       tokens = [...tokens, ...includeTokens];
     } else {
       tokens.push({ ...token, filePath });
@@ -156,10 +203,13 @@ export class FluentBitSchema {
   private _source: string;
   private _tokens: FluentBitToken[];
   private _tokenIndex: TokenIndex;
+
+  private _directives: FluentBitToken[];
   constructor(source: string, filePath: string) {
     this._source = source;
     this._filePath = filePath;
-    this._tokens = tokenize(source, getFullPath(filePath));
+    this._directives = [] as FluentBitToken[];
+    this._tokens = tokenize(source, getFullPath(filePath), this._directives);
     this._tokenIndex = new TokenIndex();
   }
   static isFluentBitConfiguration(source: string) {
@@ -174,6 +224,10 @@ export class FluentBitSchema {
   }
   get source() {
     return this._source;
+  }
+
+  get directives() {
+    return this._directives;
   }
   get schema() {
     const test = (node: FluentBitSchemaType) => {
@@ -191,6 +245,6 @@ export class FluentBitSchema {
     return this._tokenIndex.get(sectionId);
   }
   toString(indent?: number) {
-    return schemaToString(this.schema, { propIndent: indent });
+    return schemaToString(this.schema, this.directives, { propIndent: indent });
   }
 }

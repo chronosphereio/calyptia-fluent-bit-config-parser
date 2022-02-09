@@ -9,14 +9,19 @@ export enum COMMANDS {
   PARSER = 'PARSER',
   CUSTOM = 'CUSTOM',
 }
+export enum TOKEN_TYPES_DIRECTIVES {
+  SET = 'SET',
+  INCLUDE = 'INCLUDE',
+}
 export enum TOKEN_TYPES {
   PROPERTIES = 'PROPERTIES',
   CLOSE_BLOCK = 'CLOSE_BLOCK',
   OPEN_BLOCK = 'OPEN_BLOCK',
   COMMAND = 'COMMAND',
-  INCLUDE = 'INCLUDE',
   SPACE = 'SPACE',
   COMMENT = 'COMMENT',
+
+  DIRECTIVES = 'DIRECTIVES',
 }
 export type FluentBitSection = {
   id: string;

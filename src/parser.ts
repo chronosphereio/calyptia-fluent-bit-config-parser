@@ -15,9 +15,9 @@ function normalizeField(field: string) {
 
 const stateSet = {
   main: {
-    [TOKEN_TYPES.openBlock]: { match: '[', push: 'block' },
-    [TOKEN_TYPES.include]: { match: /@include+\s.*/, lineBreak: true },
-    [TOKEN_TYPES.properties]: [
+    [TOKEN_TYPES.OPEN_BLOCK]: { match: '[', push: 'block' },
+    [TOKEN_TYPES.INCLUDE]: { match: /@include+\s.*/, lineBreak: true },
+    [TOKEN_TYPES.PROPERTIES]: [
       {
         match: /\w+[-.*\d\w]+\s.*/,
         value: (value: string) => value.replace(/\s+/, ' ').trim(),
@@ -28,12 +28,12 @@ const stateSet = {
     [TOKEN_TYPES.COMMENT]: { match: /#.*/, lineBreaks: true },
   },
   block: {
-    [TOKEN_TYPES.command]: {
+    [TOKEN_TYPES.COMMAND]: {
       match: /\w+/,
       type: keywords(COMMANDS),
     },
     [TOKEN_TYPES.COMMENT]: { match: /#.*/, lineBreaks: true },
-    [TOKEN_TYPES.closeBlock]: { match: ']', push: 'main' },
+    [TOKEN_TYPES.CLOSE_BLOCK]: { match: ']', push: 'main' },
   },
 };
 export function tokenize(config: string, filePath: string, pathMemo = new Set()): FluentBitToken[] {
@@ -51,7 +51,7 @@ export function tokenize(config: string, filePath: string, pathMemo = new Set())
   // We will expand every include first, looking for any missing paths and invalid tokens
   // https://github.com/calyptia/fluent-bit-config-parser/issues/15
   for (const token of lexer) {
-    if (token.type === TOKEN_TYPES.include) {
+    if (token.type === TOKEN_TYPES.INCLUDE) {
       const [, includeFilePath, ...rest] = token.value.split(' ');
 
       // In case we find more arguments in the value given to the include directive we will fail with some guidance in the error.
@@ -105,7 +105,8 @@ export function tokensToAST(tokens: FluentBitToken[], tokenIndex: TokenIndex): F
     if (token.type === TOKEN_TYPES.SPACE) {
       continue;
     }
-    if (token.type === TOKEN_TYPES.openBlock) {
+
+    if (token.type === TOKEN_TYPES.OPEN_BLOCK) {
       if (command) {
         configBlocks.push(block);
       }
@@ -125,7 +126,7 @@ export function tokensToAST(tokens: FluentBitToken[], tokenIndex: TokenIndex): F
     }
 
     if (command) {
-      if (token.type === TOKEN_TYPES.properties) {
+      if (token.type === TOKEN_TYPES.PROPERTIES) {
         const [key, ...value] = token.value.split(' ');
         const attrName = normalizeField(key);
         const attrValue = value.join(' ');

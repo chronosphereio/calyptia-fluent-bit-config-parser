@@ -10,11 +10,11 @@ export enum COMMANDS {
   CUSTOM = 'CUSTOM',
 }
 export enum TOKEN_TYPES {
-  properties = 'PROPERTIES',
-  closeBlock = 'CLOSE_BLOCK',
-  openBlock = 'OPEN_BLOCK',
-  command = 'COMMAND',
-  include = 'INCLUDE',
+  PROPERTIES = 'PROPERTIES',
+  CLOSE_BLOCK = 'CLOSE_BLOCK',
+  OPEN_BLOCK = 'OPEN_BLOCK',
+  COMMAND = 'COMMAND',
+  INCLUDE = 'INCLUDE',
   SPACE = 'SPACE',
   COMMENT = 'COMMENT',
 }

@@ -1,5 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
-import { COMMANDS, FluentBitSection, FluentBitToken, TOKEN_TYPES, type FluentBitSchemaType } from './constants';
+import {
+  COMMANDS,
+  FluentBitSection,
+  FluentBitToken,
+  TOKEN_TYPES,
+  TOKEN_TYPES_DIRECTIVES,
+  type FluentBitSchemaType,
+} from './constants';
 import { isCommandType, isCustomSectionName, isFluentBit, isValidFluentBitSection } from './guards';
 import { keywords, states } from 'moo';
 import { schemaToString } from './schemaToString';
@@ -8,21 +15,37 @@ import { join } from 'path';
 import { dirname, isAbsolute } from 'path/posix';
 import { TokenError } from './TokenError';
 import { TokenIndex } from './TokenIndex';
+
 function normalizeField(field: string) {
   const normalizedField = field.toLowerCase();
   return normalizedField === 'match_regex' ? 'match' : normalizedField;
 }
 
+const caseInsensitiveKeywords = (defs: Record<string, string>) => {
+  const keys = keywords(defs);
+  return (value: string) => {
+    const matches = value.match(/@(\w+)\s+\w+/);
+    if (matches && matches.length >= 2) {
+      const lala = keys(matches[1].toUpperCase());
+      return lala;
+    } else {
+      return keys(value.toUpperCase());
+    }
+  };
+};
+
 const stateSet = {
   main: {
     [TOKEN_TYPES.OPEN_BLOCK]: { match: '[', push: 'block' },
-    [TOKEN_TYPES.SET]: [
-      { match: /@set+\s+\w=.*/, lineBreak: true, value: (value: string) => value.replace(/@set/, '@SET') },
-      { match: /@SET+\s+\w=.*/, lineBreak: true },
-    ],
-    [TOKEN_TYPES.INCLUDE]: [
-      { match: /@include+\s.*/, lineBreak: true, value: (value: string) => value.replace(/@include/, '@INCLUDE') },
-      { match: /@INCLUDE+\s.*/, lineBreak: true },
+    [TOKEN_TYPES.DIRECTIVES]: [
+      {
+        match: /@\w+\s+.*/,
+        type: caseInsensitiveKeywords(TOKEN_TYPES_DIRECTIVES),
+        value: (value: string) => {
+          const [, directive, ...rest] = value.trim().split(/(@\w+)/i);
+          return `${directive.toUpperCase()} ${rest.join('').trim()}`;
+        },
+      },
     ],
     [TOKEN_TYPES.PROPERTIES]: [
       {
@@ -64,12 +87,12 @@ export function tokenize(
   // https://github.com/calyptia/fluent-bit-config-parser/issues/15
   // We will also validate @SET directive
   for (const token of lexer) {
-    if (token.type === TOKEN_TYPES.SET) {
+    if (token.type === TOKEN_TYPES_DIRECTIVES.SET) {
       directives.push({ ...token, filePath });
     }
 
-    if (token.type === TOKEN_TYPES.INCLUDE) {
-      const [, includeFilePath, ...rest] = token.value.split(' ');
+    if (token.type === TOKEN_TYPES_DIRECTIVES.INCLUDE) {
+      const [, includeFilePath, ...rest] = token.text.split(' ');
 
       // In case we find more arguments in the value given to the include directive we will fail with some guidance in the error.
       if (rest.length) {

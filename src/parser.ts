@@ -17,8 +17,8 @@ const stateSet = {
   main: {
     [TOKEN_TYPES.OPEN_BLOCK]: { match: '[', push: 'block' },
     [TOKEN_TYPES.SET]: [
-      { match: /@set+\s.*/, lineBreak: true, value: (value: string) => value.replace(/@set/, '@SET') },
-      { match: /@SET+\s.*/, lineBreak: true },
+      { match: /@set+\s+\w=.*/, lineBreak: true, value: (value: string) => value.replace(/@set/, '@SET') },
+      { match: /@SET+\s+\w=.*/, lineBreak: true },
     ],
     [TOKEN_TYPES.INCLUDE]: [
       { match: /@include+\s.*/, lineBreak: true, value: (value: string) => value.replace(/@include/, '@INCLUDE') },
@@ -43,7 +43,12 @@ const stateSet = {
     [TOKEN_TYPES.CLOSE_BLOCK]: { match: ']', push: 'main' },
   },
 };
-export function tokenize(config: string, filePath: string, pathMemo = new Set()): FluentBitToken[] {
+export function tokenize(
+  config: string,
+  filePath: string,
+  directives: FluentBitToken[],
+  pathMemo = new Set()
+): FluentBitToken[] {
   if (!config.replace(/\s/g, '')) {
     throw new TokenError('File is empty', filePath, 0, 0);
   }
@@ -55,9 +60,14 @@ export function tokenize(config: string, filePath: string, pathMemo = new Set())
   let tokens = [] as FluentBitToken[];
   const lexer = states(stateSet).reset(config);
 
-  // We will expand every include first, looking for any missing paths and invalid tokens
+  // We will expand every @INCLUDE first, looking for any missing paths and invalid tokens
   // https://github.com/calyptia/fluent-bit-config-parser/issues/15
+  // We will also validate @SET directive
   for (const token of lexer) {
+    if (token.type === TOKEN_TYPES.SET) {
+      directives.push({ ...token, filePath });
+    }
+
     if (token.type === TOKEN_TYPES.INCLUDE) {
       const [, includeFilePath, ...rest] = token.value.split(' ');
 
@@ -94,7 +104,8 @@ export function tokenize(config: string, filePath: string, pathMemo = new Set())
         throw new TokenError(`Can not read file, loading from ${filePath} `, fullPath, token.line, token.col);
       }
 
-      const includeTokens = tokenize(includeConfig, fullPath, pathMemo);
+      directives.push({ ...token, filePath: fullPath });
+      const includeTokens = tokenize(includeConfig, fullPath, directives, pathMemo);
       tokens = [...tokens, ...includeTokens];
     } else {
       tokens.push({ ...token, filePath });
@@ -163,10 +174,13 @@ export class FluentBitSchema {
   private _source: string;
   private _tokens: FluentBitToken[];
   private _tokenIndex: TokenIndex;
+
+  private _directives: FluentBitToken[];
   constructor(source: string, filePath: string) {
     this._source = source;
     this._filePath = filePath;
-    this._tokens = tokenize(source, getFullPath(filePath));
+    this._directives = [] as FluentBitToken[];
+    this._tokens = tokenize(source, getFullPath(filePath), this._directives);
     this._tokenIndex = new TokenIndex();
   }
   static isFluentBitConfiguration(source: string) {
@@ -181,6 +195,10 @@ export class FluentBitSchema {
   }
   get source() {
     return this._source;
+  }
+
+  get directives() {
+    return this._directives;
   }
   get schema() {
     const test = (node: FluentBitSchemaType) => {

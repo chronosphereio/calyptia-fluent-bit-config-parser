@@ -72,32 +72,32 @@ describe('fluentBit', () => {
       const config = new FluentBitSchema(rawConfig, filePath);
 
       expect(config.toString()).toMatchInlineSnapshot(`
-      "                                                                   
-      [INPUT]                                                            
-        name            tail # some comment                              
-        tag             tail.01                                          
-        path            /var/log/system.log                              
-                                                                         
-      [OUTPUT]                                                           
-        name            s3                                               
-        match           *                                                
-        bucket          your-bucket                                      
-        region          us-east-1                                        
-        store_dir       /home/ec2-user/buffer                            
-        total_file_size 50M                                              
-        upload_timeout  10m                                              
-                                                                         
-      [OUTPUT]                                                           
-        name            splunk                                           
-        match           *                                                
-        host            127.0.0.1                                        
-        port            8088                                             
-        tls             On                                               
-        tls.verify      Off                                              
-        message_key     my_key                                           
-        add_label       pipeline_id a21fd551-095b-4271-acf0-c2fdb3161b84 
-      "
-    `);
+        "                                                                   
+        [INPUT]                                                            
+          name            tail # some comment                              
+          tag             tail.01                                          
+          path            /var/log/system.log                              
+                                                                           
+        [OUTPUT]                                                           
+          name            s3                                               
+          match           *                                                
+          bucket          your-bucket                                      
+          region          us-east-1                                        
+          store_dir       /home/ec2-user/buffer                            
+          total_file_size 50M                                              
+          upload_timeout  10m                                              
+                                                                           
+        [OUTPUT]                                                           
+          name            splunk                                           
+          match           *                                                
+          host            127.0.0.1                                        
+          port            8088                                             
+          tls             On                                               
+          tls.verify      Off                                              
+          message_key     my_key                                           
+          add_label       pipeline_id a21fd551-095b-4271-acf0-c2fdb3161b84 
+        "
+      `);
     });
     it.each(cases)('is %s, fluent-bit configuration?', (_name, rawConfig) => {
       expect(FluentBitSchema.isFluentBitConfiguration(rawConfig)).toBe(true);
@@ -144,60 +144,149 @@ describe('fluentBit', () => {
     });
   });
 
+  describe('Directive: @SET', () => {
+    it('Parses @SET in configuration', () => {
+      const filePath = './__fixtures__/directives/set/withSetVars.conf';
+      const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
+      const config = new FluentBitSchema(rawConfig, filePath);
+      expect(config.directives).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "col": 1,
+            "filePath": "<PROJECT_ROOT>/__fixtures__/directives/set/withSetVars.conf",
+            "line": 1,
+            "lineBreaks": 0,
+            "offset": 0,
+            "text": "@SET A=some configuration here again",
+            "toString": [Function],
+            "type": "SET",
+            "value": "@SET A=some configuration here again",
+          },
+          Object {
+            "col": 1,
+            "filePath": "<PROJECT_ROOT>/__fixtures__/directives/set/withSetVars.conf",
+            "line": 2,
+            "lineBreaks": 0,
+            "offset": 37,
+            "text": "@set C=some configuration here",
+            "toString": [Function],
+            "type": "SET",
+            "value": "@SET C=some configuration here",
+          },
+        ]
+      `);
+      expect(config.AST).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "__filePath": "<PROJECT_ROOT>/__fixtures__/directives/set/withSetVars.conf",
+            "command": "INPUT",
+            "id": "UNIQUE",
+            "name": "dummy",
+            "optional": Object {
+              "dummy": "{\\"message\\":\\"\${A}\\"}",
+            },
+          },
+          Object {
+            "__filePath": "<PROJECT_ROOT>/__fixtures__/directives/set/withSetVars.conf",
+            "command": "INPUT",
+            "id": "UNIQUE",
+            "name": "dummy",
+            "optional": Object {
+              "dummy": "{\\"message\\":\\"\${C}\\"}",
+            },
+          },
+          Object {
+            "__filePath": "<PROJECT_ROOT>/__fixtures__/directives/set/withSetVars.conf",
+            "command": "OUTPUT",
+            "id": "UNIQUE",
+            "name": "stdout",
+            "optional": Object {
+              "match": "*",
+            },
+          },
+        ]
+      `);
+    });
+
+    it('Should fail when @SET directive  is malformed', () => {
+      const filePath = './__fixtures__/directives/include/withIncludes.conf';
+      const rawConfig = `
+      @SET A = some configuration here again =
+      @set C=some configuration here
+      
+      [INPUT]
+        name dummy
+        dummy {"message":"\${A}"}
+      
+      `;
+
+      try {
+        new FluentBitSchema(rawConfig, filePath);
+      } catch (e) {
+        const error = e as TokenError;
+        expect(error.message).toMatchInlineSnapshot(`
+          "invalid syntax at line 2 col 7:
+
+                  @SET A = some configuration here again =
+                  ^"
+        `);
+      }
+    });
+  });
   describe('Directive: @INCLUDE', () => {
-    it('Parses global @INCLUDES in configuration', async () => {
+    it('Parses global @INCLUDES in configuration', () => {
       const filePath = './__fixtures__/directives/include/withIncludes.conf';
       const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
       const config = new FluentBitSchema(rawConfig, filePath);
       expect(config.AST).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "__filePath": "<PROJECT_ROOT>/__fixtures__/directives/include/nested/tail.conf",
-          "command": "INPUT",
-          "id": "UNIQUE",
-          "name": "tail",
-          "optional": Object {
-            "alias": "function_A_json_tail",
-            "parser": "json",
-            "path": "\${DEFAULT_LOGS_DIR}/some-json.log",
-            "path_key": "filename",
-            "refresh_interval": "10",
-            "skip_empty_lines": "On",
-            "skip_long_lines": "On",
-            "tag": "recommended.log.functionA",
-          },
-        },
-        Object {
-          "__filePath": "<PROJECT_ROOT>/__fixtures__/directives/include/nested/service.conf",
-          "command": "SERVICE",
-          "id": "UNIQUE",
-          "optional": Object {
-            "flush": "1",
-            "health_check": "On",
-            "http_port": "\${HTTP_PORT}",
-            "http_server": "On",
-            "log_level": "Debug",
-            "parsers_file": "/fluent-bit/etc/parsers/parsers-custom.conf",
-            "storage.metrics": "On",
-          },
-        },
-        Object {
-          "__filePath": "<PROJECT_ROOT>/__fixtures__/directives/include/withIncludes.conf",
-          "command": "OUTPUT",
-          "id": "UNIQUE",
-          "name": "loki",
-          "optional": Object {
-            "alias": "loki_output",
-            "host": "\${LOKI_HOST}",
-            "label_keys": "$file,$level",
-            "labels": "job=recommended-fluentbit",
-            "match": "\${LOKI_MATCH}",
-            "port": "\${LOKI_PORT}",
-            "workers": "1",
-          },
-        },
-      ]
-    `);
+              Array [
+                Object {
+                  "__filePath": "<PROJECT_ROOT>/__fixtures__/directives/include/nested/tail.conf",
+                  "command": "INPUT",
+                  "id": "UNIQUE",
+                  "name": "tail",
+                  "optional": Object {
+                    "alias": "function_A_json_tail",
+                    "parser": "json",
+                    "path": "\${DEFAULT_LOGS_DIR}/some-json.log",
+                    "path_key": "filename",
+                    "refresh_interval": "10",
+                    "skip_empty_lines": "On",
+                    "skip_long_lines": "On",
+                    "tag": "recommended.log.functionA",
+                  },
+                },
+                Object {
+                  "__filePath": "<PROJECT_ROOT>/__fixtures__/directives/include/nested/service.conf",
+                  "command": "SERVICE",
+                  "id": "UNIQUE",
+                  "optional": Object {
+                    "flush": "1",
+                    "health_check": "On",
+                    "http_port": "\${HTTP_PORT}",
+                    "http_server": "On",
+                    "log_level": "Debug",
+                    "parsers_file": "/fluent-bit/etc/parsers/parsers-custom.conf",
+                    "storage.metrics": "On",
+                  },
+                },
+                Object {
+                  "__filePath": "<PROJECT_ROOT>/__fixtures__/directives/include/withIncludes.conf",
+                  "command": "OUTPUT",
+                  "id": "UNIQUE",
+                  "name": "loki",
+                  "optional": Object {
+                    "alias": "loki_output",
+                    "host": "\${LOKI_HOST}",
+                    "label_keys": "$file,$level",
+                    "labels": "job=recommended-fluentbit",
+                    "match": "\${LOKI_MATCH}",
+                    "port": "\${LOKI_PORT}",
+                    "workers": "1",
+                  },
+                },
+              ]
+          `);
     });
     it('Fails retrieving an include that contains more than a single path as a value', async () => {
       const filePath = '__fixtures__/directives/include/withWrongIncludeValue.conf';

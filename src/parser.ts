@@ -216,6 +216,6 @@ export class FluentBitSchema {
     return this._tokenIndex.get(sectionId);
   }
   toString(indent?: number) {
-    return schemaToString(this.schema, { propIndent: indent });
+    return schemaToString(this.schema, this.directives, { propIndent: indent });
   }
 }

@@ -1,12 +1,23 @@
 import { table } from 'table';
-import { type FluentBitSection, NO_STYLES_IN_TABLE } from './constants';
+import { type FluentBitSection, NO_STYLES_IN_TABLE, FluentBitToken } from './constants';
 
 const PROP_DEFAULT_INDENT = 3;
 
 const getIndent = (indent: number): string => Array.from({ length: indent }).join(' ');
-export function schemaToString(configBlocks: FluentBitSection[], { propIndent = PROP_DEFAULT_INDENT }): string {
+export function schemaToString(
+  configBlocks: FluentBitSection[],
+  directives: FluentBitToken[],
+  { propIndent = PROP_DEFAULT_INDENT }
+): string {
   const data = [] as string[][];
   const spanningCells = [];
+
+  const renderDirectives = [];
+  if (directives.length) {
+    for (const { value } of directives) {
+      renderDirectives.push(`\n${value}`);
+    }
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   for (const { command, id, optional, ...rest } of configBlocks) {
@@ -19,5 +30,5 @@ export function schemaToString(configBlocks: FluentBitSection[], { propIndent = 
     }
   }
 
-  return table(data, NO_STYLES_IN_TABLE);
+  return [renderDirectives.join('\n'), table(data, NO_STYLES_IN_TABLE)].join('\n');
 }

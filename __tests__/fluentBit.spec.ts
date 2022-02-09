@@ -72,7 +72,8 @@ describe('fluentBit', () => {
       const config = new FluentBitSchema(rawConfig, filePath);
 
       expect(config.toString()).toMatchInlineSnapshot(`
-        "                                                                   
+        "
+                                                                           
         [INPUT]                                                            
           name            tail # some comment                              
           tag             tail.01                                          
@@ -209,7 +210,7 @@ describe('fluentBit', () => {
     });
 
     it('Should fail when @SET directive  is malformed', () => {
-      const filePath = './__fixtures__/directives/include/withIncludes.conf';
+      const filePath = '/__fixtures__/directives/set/ephemeral.conf';
       const rawConfig = `
       @SET A = some configuration here again =
       @set C=some configuration here
@@ -231,6 +232,31 @@ describe('fluentBit', () => {
                   ^"
         `);
       }
+    });
+
+    it('Should add the @SET directive when calling toString()', () => {
+      const filePath = '/__fixtures__/directives/set/ephemeral.conf';
+      const rawConfig = `
+      @SET A=some configuration here again =
+      @set C=some configuration here
+      
+      [INPUT]
+        name dummy
+        dummy {"message":"\${A}"}
+      `;
+
+      const config = new FluentBitSchema(rawConfig, filePath);
+      expect(config.toString()).toMatchInlineSnapshot(`
+        "
+        @SET A=some configuration here again =
+
+        @SET C=some configuration here
+                                   
+        [INPUT]                    
+          name  dummy              
+          dummy {\\"message\\":\\"\${A}\\"} 
+        "
+      `);
     });
   });
   describe('Directive: @INCLUDE', () => {

@@ -24,13 +24,9 @@ function normalizeField(field: string) {
 const caseInsensitiveKeywords = (defs: Record<string, string>) => {
   const keys = keywords(defs);
   return (value: string) => {
-    const matches = value.match(/@(\w+)\s+\w+/);
-    if (matches && matches.length >= 2) {
-      const lala = keys(matches[1].toUpperCase());
-      return lala;
-    } else {
-      return keys(value.toUpperCase());
-    }
+    const matches = value.match(/@(\w+)\s+\w+/) || [];
+    const lala = keys(matches[1].toUpperCase());
+    return lala;
   };
 };
 
@@ -87,6 +83,16 @@ export function tokenize(
   // https://github.com/calyptia/fluent-bit-config-parser/issues/15
   // We will also validate @SET directive
   for (const token of lexer) {
+    if (token.type === TOKEN_TYPES.DIRECTIVES) {
+      throw new TokenError(
+        `You have defined a Directive not supported (${token.text}). The supported directives are: ${Object.keys(
+          TOKEN_TYPES_DIRECTIVES
+        )}`,
+        filePath,
+        token.line,
+        token.col
+      );
+    }
     if (token.type === TOKEN_TYPES_DIRECTIVES.SET) {
       directives.push({ ...token, filePath });
     }

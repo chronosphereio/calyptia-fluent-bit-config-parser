@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`fluentBit Retrieves the right tokens set from the given section. 1`] = `
+exports[`Fluent Bit Utilities Retrieves the right tokens set from the given section. 1`] = `
 Array [
   Object {
     "col": 1,
@@ -302,7 +302,7 @@ Array [
 ]
 `;
 
-exports[`fluentBit Simpler section to tokens. 1`] = `
+exports[`Fluent Bit Utilities Simpler section to tokens. 1`] = `
 Array [
   Object {
     "col": 5,

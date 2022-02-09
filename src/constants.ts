@@ -17,6 +17,7 @@ export enum TOKEN_TYPES {
   INCLUDE = 'INCLUDE',
   SPACE = 'SPACE',
   COMMENT = 'COMMENT',
+  SET = 'SET',
 }
 export type FluentBitSection = {
   id: string;

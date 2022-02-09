@@ -16,7 +16,14 @@ function normalizeField(field: string) {
 const stateSet = {
   main: {
     [TOKEN_TYPES.OPEN_BLOCK]: { match: '[', push: 'block' },
-    [TOKEN_TYPES.INCLUDE]: { match: /@include+\s.*/, lineBreak: true },
+    [TOKEN_TYPES.SET]: [
+      { match: /@set+\s.*/, lineBreak: true, value: (value: string) => value.replace(/@set/, '@SET') },
+      { match: /@SET+\s.*/, lineBreak: true },
+    ],
+    [TOKEN_TYPES.INCLUDE]: [
+      { match: /@include+\s.*/, lineBreak: true, value: (value: string) => value.replace(/@include/, '@INCLUDE') },
+      { match: /@INCLUDE+\s.*/, lineBreak: true },
+    ],
     [TOKEN_TYPES.PROPERTIES]: [
       {
         match: /\w+[-.*\d\w]+\s.*/,

@@ -121,10 +121,10 @@ describe('Fluent Bit: Directives', () => {
         expect(error.line).toBe(3);
         expect(error.col).toBe(1);
         expect(error.message).toMatchInlineSnapshot(
-          '"You are trying to include nested/tail.conf, but we also found more arguments (shouldNotHaveAnytingElse). Includes can only have a single value (ex: @includes path/to/a/file)"'
+          '"You are trying to include nested/tail.conf, but we also found more arguments (shouldNotHaveAnytingElse). @INCLUDE directive can only have a single value (ex: @INCLUDE path/to/a/file)"'
         );
         expect(error.formattedError).toMatchInlineSnapshot(
-          '"<PROJECT_ROOT>/__fixtures__/directives/include/withWrongIncludeValue.conf: 3:1 You are trying to include nested/tail.conf, but we also found more arguments (shouldNotHaveAnytingElse). Includes can only have a single value (ex: @includes path/to/a/file)"'
+          '"<PROJECT_ROOT>/__fixtures__/directives/include/withWrongIncludeValue.conf: 3:1 You are trying to include nested/tail.conf, but we also found more arguments (shouldNotHaveAnytingElse). @INCLUDE directive can only have a single value (ex: @INCLUDE path/to/a/file)"'
         );
         expect(error.filePath).toMatchInlineSnapshot(
           '"<PROJECT_ROOT>/__fixtures__/directives/include/withWrongIncludeValue.conf"'
@@ -164,14 +164,12 @@ describe('Fluent Bit: Directives', () => {
         const error = e as TokenError;
         expect(error.line).toBe(3);
         expect(error.col).toBe(1);
-        expect(error.message).toMatchInlineSnapshot(
-          '"Can not read file, loading from <PROJECT_ROOT>/__fixtures__/directives/include/withFailingIncludes.conf "'
-        );
+        expect(error.message).toMatchInlineSnapshot('"Can not read file nested/notExistentInclude.conf"');
         expect(error.formattedError).toMatchInlineSnapshot(
-          '"<PROJECT_ROOT>/__fixtures__/directives/include/nested/notExistentInclude.conf: 3:1 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/directives/include/withFailingIncludes.conf "'
+          '"<PROJECT_ROOT>/__fixtures__/directives/include/withFailingIncludes.conf: 3:1 Can not read file nested/notExistentInclude.conf"'
         );
         expect(error.filePath).toMatchInlineSnapshot(
-          '"<PROJECT_ROOT>/__fixtures__/directives/include/nested/notExistentInclude.conf"'
+          '"<PROJECT_ROOT>/__fixtures__/directives/include/withFailingIncludes.conf"'
         );
       }
       expect.hasAssertions();

@@ -130,6 +130,7 @@ describe('Fluent Bit: Directives', () => {
           '"<PROJECT_ROOT>/__fixtures__/directives/include/withWrongIncludeValue.conf"'
         );
       }
+      expect.hasAssertions();
     });
     it('Fails retrieving a repeated @INCLUDE (can not include file twice) ', async () => {
       const filePath = '__fixtures__/directives/include/withDuplicatedIncludes.conf';
@@ -151,6 +152,7 @@ describe('Fluent Bit: Directives', () => {
           '"<PROJECT_ROOT>/__fixtures__/directives/include/withDuplicatedIncludes.conf"'
         );
       }
+      expect.hasAssertions();
     });
     it('Fails retrieving a missing @include (file not found) ', async () => {
       const filePath = './__fixtures__/directives/include/withFailingIncludes.conf';
@@ -172,6 +174,7 @@ describe('Fluent Bit: Directives', () => {
           '"<PROJECT_ROOT>/__fixtures__/directives/include/nested/notExistentInclude.conf"'
         );
       }
+      expect.hasAssertions();
     });
   });
   describe('@SET', () => {

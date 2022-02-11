@@ -21,10 +21,10 @@ describe('Fluent Bit: Directives', () => {
     } catch (e) {
       const error = e as TokenError;
       expect(error.message).toMatchInlineSnapshot(
-        '"You have defined a Directive not supported (@WHATEVER something that we do not have implemented/invalid. ). The supported directives are: SET,INCLUDE"'
+        '"You have defined a directive that cannot be parse (@WHATEVER something that we do not have implemented/invalid. ). The supported directives are: SET,INCLUDE"'
       );
       expect(error.formattedError).toMatchInlineSnapshot(
-        '"/__fixtures__/directives/directives/ephemeral.conf: 3:5 You have defined a Directive not supported (@WHATEVER something that we do not have implemented/invalid. ). The supported directives are: SET,INCLUDE"'
+        '"/__fixtures__/directives/directives/ephemeral.conf: 3:5 You have defined a directive that cannot be parse (@WHATEVER something that we do not have implemented/invalid. ). The supported directives are: SET,INCLUDE"'
       );
     }
     expect.hasAssertions();
@@ -130,6 +130,7 @@ describe('Fluent Bit: Directives', () => {
           '"<PROJECT_ROOT>/__fixtures__/directives/include/withWrongIncludeValue.conf"'
         );
       }
+      expect.hasAssertions();
     });
     it('Fails retrieving a repeated @INCLUDE (can not include file twice) ', async () => {
       const filePath = '__fixtures__/directives/include/withDuplicatedIncludes.conf';
@@ -151,6 +152,7 @@ describe('Fluent Bit: Directives', () => {
           '"<PROJECT_ROOT>/__fixtures__/directives/include/withDuplicatedIncludes.conf"'
         );
       }
+      expect.hasAssertions();
     });
     it('Fails retrieving a missing @include (file not found) ', async () => {
       const filePath = './__fixtures__/directives/include/withFailingIncludes.conf';
@@ -172,6 +174,7 @@ describe('Fluent Bit: Directives', () => {
           '"<PROJECT_ROOT>/__fixtures__/directives/include/nested/notExistentInclude.conf"'
         );
       }
+      expect.hasAssertions();
     });
   });
   describe('@SET', () => {
@@ -255,7 +258,36 @@ describe('Fluent Bit: Directives', () => {
       const config = new FluentBitSchema(rawConfig, filePath);
       expect(config.directives).toMatchSnapshot();
     });
-    it('Should fail when @SET directive  is malformed', () => {
+    it('Should parse the @SET directive correctly', () => {
+      const filePath = '/__fixtures__/directives/set/ephemeral.conf';
+      const rawConfig = `
+      # Note the space which becomes part of the variable name, we should not do this. but is allowed :/
+      @set C =3
+      
+      [INPUT]
+        name dummy
+        dummy {"message":"\${C }"}
+      
+      `;
+      const config = new FluentBitSchema(rawConfig, filePath);
+
+      expect(config.directives).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "col": 7,
+            "filePath": "/__fixtures__/directives/set/ephemeral.conf",
+            "line": 3,
+            "lineBreaks": 0,
+            "offset": 112,
+            "text": "@set C =3",
+            "toString": [Function],
+            "type": "SET",
+            "value": "@SET C =3",
+          },
+        ]
+      `);
+    });
+    it('Should parse correctly the @SET directive', () => {
       const filePath = '/__fixtures__/directives/set/ephemeral.conf';
       const rawConfig = `
       @SET A = some configuration here again =
@@ -267,17 +299,34 @@ describe('Fluent Bit: Directives', () => {
       
       `;
 
-      try {
-        new FluentBitSchema(rawConfig, filePath);
-      } catch (e) {
-        const error = e as TokenError;
-        expect(error.message).toMatchInlineSnapshot(`
-          "invalid syntax at line 2 col 7:
+      const config = new FluentBitSchema(rawConfig, filePath);
 
-                  @SET A = some configuration here again =
-                  ^"
-        `);
-      }
+      expect(config.directives).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "col": 7,
+            "filePath": "/__fixtures__/directives/set/ephemeral.conf",
+            "line": 2,
+            "lineBreaks": 0,
+            "offset": 7,
+            "text": "@SET A = some configuration here again =",
+            "toString": [Function],
+            "type": "SET",
+            "value": "@SET A = some configuration here again =",
+          },
+          Object {
+            "col": 7,
+            "filePath": "/__fixtures__/directives/set/ephemeral.conf",
+            "line": 3,
+            "lineBreaks": 0,
+            "offset": 54,
+            "text": "@set C=some configuration here",
+            "toString": [Function],
+            "type": "SET",
+            "value": "@SET C=some configuration here",
+          },
+        ]
+      `);
     });
 
     it('Should add the @SET directive when calling toString()', () => {
@@ -303,6 +352,26 @@ describe('Fluent Bit: Directives', () => {
           dummy {\\"message\\":\\"\${A}\\"} 
         "
       `);
+    });
+    it('Should fail when @SET directive is malformed', async () => {
+      const filePath = './__fixtures__/directives/set/withManySets.conf';
+      const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
+      try {
+        new FluentBitSchema(rawConfig, filePath);
+      } catch (e) {
+        expect(e).toBeInstanceOf(TokenError);
+        const error = e as TokenError;
+        expect(error.line).toBe(5);
+        expect(error.col).toBe(1);
+        expect(error.message).toMatchInlineSnapshot(
+          '"You have defined a directive that cannot be parse (@set ${A}=1). The supported directives are: SET,INCLUDE"'
+        );
+        expect(error.formattedError).toMatchInlineSnapshot(
+          '"<PROJECT_ROOT>/__fixtures__/directives/set/withManySets.conf: 5:1 You have defined a directive that cannot be parse (@set ${A}=1). The supported directives are: SET,INCLUDE"'
+        );
+        expect(error.filePath).toMatchInlineSnapshot('"<PROJECT_ROOT>/__fixtures__/directives/set/withManySets.conf"');
+      }
+      expect.hasAssertions();
     });
   });
 });

@@ -25,8 +25,11 @@ const caseInsensitiveKeywords = (defs: Record<string, string>) => {
   const keys = keywords(defs);
   return (value: string) => {
     const matches = value.match(/@(\w+)\s+\w+/) || [];
-    const lala = keys(matches[1].toUpperCase());
-    return lala;
+    try {
+      return keys(matches[1].toUpperCase());
+    } catch (e) {
+      return keys('');
+    }
   };
 };
 
@@ -85,7 +88,7 @@ export function tokenize(
   for (const token of lexer) {
     if (token.type === TOKEN_TYPES.DIRECTIVES) {
       throw new TokenError(
-        `You have defined a Directive not supported (${token.text}). The supported directives are: ${Object.keys(
+        `You have defined a directive that cannot be parse (${token.text}). The supported directives are: ${Object.keys(
           TOKEN_TYPES_DIRECTIVES
         )}`,
         filePath,

@@ -62,7 +62,6 @@ describe('Fluent Bit', () => {
           '"/file/path.conf: 0:0 This file is not a valid Fluent Bit config file"'
         );
       }
-
       expect.hasAssertions();
     });
     it('Fails if config is empty', () => {
@@ -73,7 +72,6 @@ describe('Fluent Bit', () => {
         expect(error.message).toMatchInlineSnapshot('"File is empty"');
         expect(error.formattedError).toMatchInlineSnapshot('"/file/path.conf: 0:0 File is empty"');
       }
-
       expect.hasAssertions();
     });
 

@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { FluentBitSchema } from '../index';
+import type { TokenError } from '../src';
 import { cases } from '../__fixtures__/fluentBitCases';
 
 jest.mock('uuid', () => ({ v4: () => 'UNIQUE' }));
@@ -52,14 +53,28 @@ describe('Fluent Bit', () => {
     `);
     });
     it('Fails if config has no fields', () => {
-      expect(() => new FluentBitSchema('# some comment', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
-        '"/file/path.conf: 0:0 This file is not a valid Fluent Bit config file"'
-      );
+      try {
+        new FluentBitSchema('# some comment', '/file/path.conf');
+      } catch (e) {
+        const error = e as TokenError;
+        expect(error.message).toMatchInlineSnapshot('"This file is not a valid Fluent Bit config file"');
+        expect(error.formattedError).toMatchInlineSnapshot(
+          '"/file/path.conf: 0:0 This file is not a valid Fluent Bit config file"'
+        );
+      }
+
+      expect.hasAssertions();
     });
     it('Fails if config is empty', () => {
-      expect(() => new FluentBitSchema('       ', '/file/path.conf')).toThrowErrorMatchingInlineSnapshot(
-        '"/file/path.conf: 0:0 File is empty"'
-      );
+      try {
+        new FluentBitSchema('       ', '/file/path.conf');
+      } catch (e) {
+        const error = e as TokenError;
+        expect(error.message).toMatchInlineSnapshot('"File is empty"');
+        expect(error.formattedError).toMatchInlineSnapshot('"/file/path.conf: 0:0 File is empty"');
+      }
+
+      expect.hasAssertions();
     });
 
     it('Should transform schema to string for basic.conf', () => {

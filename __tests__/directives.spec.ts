@@ -21,6 +21,9 @@ describe('Fluent Bit: Directives', () => {
     } catch (e) {
       const error = e as TokenError;
       expect(error.message).toMatchInlineSnapshot(
+        '"You have defined a Directive not supported (@WHATEVER something that we do not have implemented/invalid. ). The supported directives are: SET,INCLUDE"'
+      );
+      expect(error.formattedError).toMatchInlineSnapshot(
         '"/__fixtures__/directives/directives/ephemeral.conf: 3:5 You have defined a Directive not supported (@WHATEVER something that we do not have implemented/invalid. ). The supported directives are: SET,INCLUDE"'
       );
     }
@@ -118,6 +121,9 @@ describe('Fluent Bit: Directives', () => {
         expect(error.line).toBe(3);
         expect(error.col).toBe(1);
         expect(error.message).toMatchInlineSnapshot(
+          '"You are trying to include nested/tail.conf, but we also found more arguments (shouldNotHaveAnytingElse). Includes can only have a single value (ex: @includes path/to/a/file)"'
+        );
+        expect(error.formattedError).toMatchInlineSnapshot(
           '"<PROJECT_ROOT>/__fixtures__/directives/include/withWrongIncludeValue.conf: 3:1 You are trying to include nested/tail.conf, but we also found more arguments (shouldNotHaveAnytingElse). Includes can only have a single value (ex: @includes path/to/a/file)"'
         );
         expect(error.filePath).toMatchInlineSnapshot(
@@ -136,6 +142,9 @@ describe('Fluent Bit: Directives', () => {
         expect(error.line).toBe(9);
         expect(error.col).toBe(1);
         expect(error.message).toMatchInlineSnapshot(
+          '"You are trying to include <PROJECT_ROOT>/__fixtures__/directives/include/nested/tail.conf. Fluent Bit does not allow a file to be included twice in the same configuration"'
+        );
+        expect(error.formattedError).toMatchInlineSnapshot(
           '"<PROJECT_ROOT>/__fixtures__/directives/include/withDuplicatedIncludes.conf: 9:1 You are trying to include <PROJECT_ROOT>/__fixtures__/directives/include/nested/tail.conf. Fluent Bit does not allow a file to be included twice in the same configuration"'
         );
         expect(error.filePath).toMatchInlineSnapshot(
@@ -154,6 +163,9 @@ describe('Fluent Bit: Directives', () => {
         expect(error.line).toBe(3);
         expect(error.col).toBe(1);
         expect(error.message).toMatchInlineSnapshot(
+          '"Can not read file, loading from <PROJECT_ROOT>/__fixtures__/directives/include/withFailingIncludes.conf "'
+        );
+        expect(error.formattedError).toMatchInlineSnapshot(
           '"<PROJECT_ROOT>/__fixtures__/directives/include/nested/notExistentInclude.conf: 3:1 Can not read file, loading from <PROJECT_ROOT>/__fixtures__/directives/include/withFailingIncludes.conf "'
         );
         expect(error.filePath).toMatchInlineSnapshot(

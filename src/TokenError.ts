@@ -1,5 +1,3 @@
-const formatError = (message: string, filePath: string, line: number, col: number): string =>
-  `${filePath}: ${line}:${col} ${message}`;
 export class TokenError extends Error {
   line: number;
   col: number;
@@ -7,12 +5,15 @@ export class TokenError extends Error {
 
   filePath: string;
   constructor(message: string, filePath: string, line: number, col: number) {
-    const errorMsg = formatError(message, filePath, line, col);
-    super(errorMsg);
+    super(message);
     this.name = 'TokenError';
-    this.message = formatError(message, filePath, line, col);
+    this.message = message;
     this.filePath = filePath;
     this.line = line;
     this.col = col;
+  }
+
+  get formattedError() {
+    return `${this.filePath}: ${this.line}:${this.col} ${this.message}`;
   }
 }

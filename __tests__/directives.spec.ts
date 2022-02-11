@@ -258,7 +258,7 @@ describe('Fluent Bit: Directives', () => {
       const config = new FluentBitSchema(rawConfig, filePath);
       expect(config.directives).toMatchSnapshot();
     });
-    it('Should fail when @SET directive is malformed', () => {
+    it('Should parse the @SET directive correctly', () => {
       const filePath = '/__fixtures__/directives/set/ephemeral.conf';
       const rawConfig = `
       # Note the space which becomes part of the variable name, we should not do this. but is allowed :/

@@ -258,6 +258,35 @@ describe('Fluent Bit: Directives', () => {
     it('Should fail when @SET directive is malformed', () => {
       const filePath = '/__fixtures__/directives/set/ephemeral.conf';
       const rawConfig = `
+      # Note the space which becomes part of the variable name, we should not do this. but is allowed :/
+      @set C =3
+      
+      [INPUT]
+        name dummy
+        dummy {"message":"\${C }"}
+      
+      `;
+      const config = new FluentBitSchema(rawConfig, filePath);
+
+      expect(config.directives).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "col": 7,
+            "filePath": "/__fixtures__/directives/set/ephemeral.conf",
+            "line": 3,
+            "lineBreaks": 0,
+            "offset": 112,
+            "text": "@set C =3",
+            "toString": [Function],
+            "type": "SET",
+            "value": "@SET C =3",
+          },
+        ]
+      `);
+    });
+    it('Should parse correctly the @SET directive', () => {
+      const filePath = '/__fixtures__/directives/set/ephemeral.conf';
+      const rawConfig = `
       @SET A = some configuration here again =
       @set C=some configuration here
       
@@ -267,17 +296,34 @@ describe('Fluent Bit: Directives', () => {
       
       `;
 
-      try {
-        new FluentBitSchema(rawConfig, filePath);
-      } catch (e) {
-        const error = e as TokenError;
-        expect(error.message).toMatchInlineSnapshot(`
-          "invalid syntax at line 2 col 7:
+      const config = new FluentBitSchema(rawConfig, filePath);
 
-                  @SET A = some configuration here again =
-                  ^"
-        `);
-      }
+      expect(config.directives).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "col": 7,
+            "filePath": "/__fixtures__/directives/set/ephemeral.conf",
+            "line": 2,
+            "lineBreaks": 0,
+            "offset": 7,
+            "text": "@SET A = some configuration here again =",
+            "toString": [Function],
+            "type": "SET",
+            "value": "@SET A = some configuration here again =",
+          },
+          Object {
+            "col": 7,
+            "filePath": "/__fixtures__/directives/set/ephemeral.conf",
+            "line": 3,
+            "lineBreaks": 0,
+            "offset": 54,
+            "text": "@set C=some configuration here",
+            "toString": [Function],
+            "type": "SET",
+            "value": "@SET C=some configuration here",
+          },
+        ]
+      `);
     });
 
     it('Should add the @SET directive when calling toString()', () => {
@@ -322,6 +368,7 @@ describe('Fluent Bit: Directives', () => {
         );
         expect(error.filePath).toMatchInlineSnapshot('"<PROJECT_ROOT>/__fixtures__/directives/set/withManySets.conf"');
       }
+      expect.hasAssertions();
     });
   });
 });

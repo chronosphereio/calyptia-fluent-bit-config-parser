@@ -106,7 +106,7 @@ export function tokenize(
       // In case we find more arguments in the value given to the include directive we will fail with some guidance in the error.
       if (rest.length) {
         throw new TokenError(
-          `You are trying to include ${includeFilePath}, but we also found more arguments (${rest}). Includes can only have a single value (ex: @includes path/to/a/file)`,
+          `You are trying to include ${includeFilePath}, but we also found more arguments (${rest}). @INCLUDE directive can only have a single value (ex: @INCLUDE path/to/a/file)`,
           filePath,
           token.line,
           token.col
@@ -133,7 +133,7 @@ export function tokenize(
         if (e instanceof TokenError) {
           throw e;
         }
-        throw new TokenError(`Can not read file, loading from ${filePath} `, fullPath, token.line, token.col);
+        throw new TokenError(`Can not read file ${includeFilePath}`, filePath, token.line, token.col);
       }
 
       directives.push({ ...token, filePath: fullPath });

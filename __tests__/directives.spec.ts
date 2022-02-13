@@ -4,7 +4,7 @@ import { TokenError } from '../src/TokenError';
 
 jest.mock('uuid', () => ({ v4: () => 'UNIQUE' }));
 describe('Fluent Bit: Directives', () => {
-  it('Not recognized  directives should fail ', () => {
+  it('Not recognized directives should fail', () => {
     const filePath = '/__fixtures__/directives/directives/ephemeral.conf';
     const rawConfig = `
     @SET A=B
@@ -30,6 +30,46 @@ describe('Fluent Bit: Directives', () => {
     expect.hasAssertions();
   });
   describe('@INCLUDE', () => {
+    it('Parses global @INCLUDES in configuration (ignoreFullPath: false)', () => {
+      const filePath = '/__fixtures__/directives/include/ephemeral';
+      const rawConfig = `
+      @INCLUDE /this/is/a/full/path.conf
+
+      [INPUT]
+        name dummy
+      `;
+      try {
+        new FluentBitSchema(rawConfig, filePath);
+      } catch (e) {
+        const error = e as TokenError;
+
+        expect(error.filePath).toMatchInlineSnapshot('"/__fixtures__/directives/include/ephemeral"');
+        expect(error.message).toMatchInlineSnapshot('"Can not find file /this/is/a/full/path.conf"');
+      }
+      expect.hasAssertions();
+    });
+    it('Parses global @INCLUDES in configuration (ignoreFullPath: true)', () => {
+      const filePath = '/__fixtures__/directives/include/ephemeral';
+      const rawConfig = `
+      @INCLUDE /this/is/a/full/path.conf
+
+      [INPUT]
+        name dummy
+      `;
+      const config = new FluentBitSchema(rawConfig, filePath, { ignoreFullPaths: true });
+      expect(config.directives).toMatchObject([]);
+      expect(config.AST).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "__filePath": "/__fixtures__/directives/include/ephemeral",
+            "command": "INPUT",
+            "id": "UNIQUE",
+            "name": "dummy",
+            "optional": Object {},
+          },
+        ]
+      `);
+    });
     it('Parses global @INCLUDES in configuration', () => {
       const filePath = './__fixtures__/directives/include/withIncludes.conf';
       const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
@@ -132,7 +172,7 @@ describe('Fluent Bit: Directives', () => {
       }
       expect.hasAssertions();
     });
-    it('Fails retrieving a repeated @INCLUDE (can not include file twice) ', async () => {
+    it('Fails retrieving a repeated @INCLUDE (can not include file twice)', async () => {
       const filePath = '__fixtures__/directives/include/withDuplicatedIncludes.conf';
       const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
       try {
@@ -154,7 +194,7 @@ describe('Fluent Bit: Directives', () => {
       }
       expect.hasAssertions();
     });
-    it('Fails retrieving a missing @include (file not found) ', async () => {
+    it('Fails retrieving a missing @INCLUDE (file not found) ', async () => {
       const filePath = './__fixtures__/directives/include/withFailingIncludes.conf';
       const rawConfig = readFileSync(filePath, { encoding: 'utf-8' });
       try {
@@ -164,9 +204,9 @@ describe('Fluent Bit: Directives', () => {
         const error = e as TokenError;
         expect(error.line).toBe(3);
         expect(error.col).toBe(1);
-        expect(error.message).toMatchInlineSnapshot('"Can not read file nested/notExistentInclude.conf"');
+        expect(error.message).toMatchInlineSnapshot('"Can not find file nested/notExistentInclude.conf"');
         expect(error.formattedError).toMatchInlineSnapshot(
-          '"<PROJECT_ROOT>/__fixtures__/directives/include/withFailingIncludes.conf: 3:1 Can not read file nested/notExistentInclude.conf"'
+          '"<PROJECT_ROOT>/__fixtures__/directives/include/withFailingIncludes.conf: 3:1 Can not find file nested/notExistentInclude.conf"'
         );
         expect(error.filePath).toMatchInlineSnapshot(
           '"<PROJECT_ROOT>/__fixtures__/directives/include/withFailingIncludes.conf"'
@@ -239,53 +279,7 @@ describe('Fluent Bit: Directives', () => {
       `);
     });
 
-    it('Parses @SET in configuration (case insensitive)', () => {
-      const filePath = '/__fixtures__/directives/set/ephemeral.conf';
-      const rawConfig = `
-      @Set A=A
-      @SeT B=B
-      @SEt C=C
-      @seT D=D
-      @sET E=E
-      @sEt F=F
-      
-      [INPUT]
-        name dummy
-        dummy {"message":"\${A}"}
-      `;
-      const config = new FluentBitSchema(rawConfig, filePath);
-      expect(config.directives).toMatchSnapshot();
-    });
     it('Should parse the @SET directive correctly', () => {
-      const filePath = '/__fixtures__/directives/set/ephemeral.conf';
-      const rawConfig = `
-      # Note the space which becomes part of the variable name, we should not do this. but is allowed :/
-      @set C =3
-      
-      [INPUT]
-        name dummy
-        dummy {"message":"\${C }"}
-      
-      `;
-      const config = new FluentBitSchema(rawConfig, filePath);
-
-      expect(config.directives).toMatchInlineSnapshot(`
-        Array [
-          Object {
-            "col": 7,
-            "filePath": "/__fixtures__/directives/set/ephemeral.conf",
-            "line": 3,
-            "lineBreaks": 0,
-            "offset": 112,
-            "text": "@set C =3",
-            "toString": [Function],
-            "type": "SET",
-            "value": "@SET C =3",
-          },
-        ]
-      `);
-    });
-    it('Should parse correctly the @SET directive', () => {
       const filePath = '/__fixtures__/directives/set/ephemeral.conf';
       const rawConfig = `
       @SET A = some configuration here again =
@@ -322,6 +316,53 @@ describe('Fluent Bit: Directives', () => {
             "toString": [Function],
             "type": "SET",
             "value": "@SET C=some configuration here",
+          },
+        ]
+      `);
+    });
+
+    it('Parses @SET in configuration (case insensitive)', () => {
+      const filePath = '/__fixtures__/directives/set/ephemeral.conf';
+      const rawConfig = `
+      @Set A=A
+      @SeT B=B
+      @SEt C=C
+      @seT D=D
+      @sET E=E
+      @sEt F=F
+      
+      [INPUT]
+        name dummy
+        dummy {"message":"\${A}"}
+      `;
+      const config = new FluentBitSchema(rawConfig, filePath);
+      expect(config.directives).toMatchSnapshot();
+    });
+    it('Should parse the @SET directive correctly, even when there is a space after the assignment', () => {
+      const filePath = '/__fixtures__/directives/set/ephemeral.conf';
+      const rawConfig = `
+      # Note the space which becomes part of the variable name, we should not do this. but is allowed :/
+      @set C =3
+      
+      [INPUT]
+        name dummy
+        dummy {"message":"\${C }"}
+      
+      `;
+      const config = new FluentBitSchema(rawConfig, filePath);
+
+      expect(config.directives).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "col": 7,
+            "filePath": "/__fixtures__/directives/set/ephemeral.conf",
+            "line": 3,
+            "lineBreaks": 0,
+            "offset": 112,
+            "text": "@set C =3",
+            "toString": [Function],
+            "type": "SET",
+            "value": "@SET C =3",
           },
         ]
       `);

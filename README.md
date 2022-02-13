@@ -67,7 +67,8 @@ import fs from 'fs';
 
 import { FluentBitSchema } from '@calyptia/fluent-bit-config-parser';
 
-const file = fs.readFileSync('/path/to/file.conf', { encoding: 'utf-8' });
+const filePath = '/path/to/file.conf';
+const file = fs.readFileSync(filePath, { encoding: 'utf-8' });
 
 console.log(FluentBitSchema.isFluentBitConfiguration(file)); // => true/false
 ```
@@ -79,7 +80,8 @@ import fs from 'fs';
 
 import { FluentBitSchema } from '@calyptia/fluent-bit-config-parser';
 
-const file = fs.readFileSync('/path/to/file.conf', { encoding: 'utf-8' });
+const filePath = '/path/to/file.conf';
+const file = fs.readFileSync(filePath, { encoding: 'utf-8' });
 
 try {
   const config = new FluentBitSchema(file);
@@ -96,18 +98,45 @@ import fs from 'fs';
 
 import { FluentBitSchema } from '@calyptia/fluent-bit-config-parser';
 
-const file = fs.readFileSync('/path/to/file.conf', { encoding: 'utf-8' });
+const filePath = '/path/to/file.conf';
 
-const config = new FluentBitSchema(file);
+const file = fs.readFileSync(filePath, { encoding: 'utf-8' });
+
+const config = new FluentBitSchema(file, filePath);
 
 console.log(config.toString());
+```
+
+### Options
+
+FluentBitSchema can handle directives such as @SET and @INCLUDE. That's why the second argument is a `filePath`. Sometimes the configuration we create has full paths. These paths will most likely change when placing them in a repository. If that's your case, you can set `ignoreFullPaths: true` and the parser will ignore @INCLUDES containing full paths. One handy example of this could be:
+
+```typescript
+import fs from 'fs';
+
+import { FluentBitSchema } from '@calyptia/fluent-bit-config-parser';
+
+const filePath = '/path/to/file.conf';
+
+const rawConfig = `
+@INCLUDE /this/is/a/full/path/that/does/not/exist/in/my/repo/config.conf
+
+[INPUT]
+  name dummy
+`;
+
+const file = fs.readFileSync(filePath, { encoding: 'utf-8' });
+
+const config = new FluentBitSchema(file, filePath, { ignoreFullPaths: true });
+
+console.log(config.toString()); // will not contain the @INCLUDE directive call.
 ```
 
 <!-- CONTRIBUTING -->
 
 ## Contributing
 
-Contributions are what makes the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated **greatly appreciated**.
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated **greatly appreciated**.
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)

@@ -22,8 +22,8 @@ function normalizeField(field: string) {
 }
 
 /**
- * You might be wondering why the DIRECTIVE regex used on the states is wider than the one used here, (DIRECTIVE_EXTRACTION_REGEX).
- *  The one used for the states has to be relaxed to be able to return the right guidance on the error. Chifley, We want to provide
+ * You might be wondering why the `DIRECTIVE` regex used on the states is wider than the one used here, (`DIRECTIVE_EXTRACTION_REGEX`).
+ *  The one used for the states has to be relaxed to be able to return the right guidance on the error. Chiefly, we want to provide
  * a richer error response other than the one provided by moo library.
  * We will collect all directives like tokens as valid, and later on (in tokenize function) sass out which ones are valid or not.
  * follow [this link for an example with test data](https://regex101.com/r/gks9tK/1)

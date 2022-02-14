@@ -48,7 +48,7 @@ describe('Fluent Bit: Directives', () => {
       }
       expect.hasAssertions();
     });
-    it('Parses global @INCLUDES in configuration (ignoreFullPath: true)', () => {
+    it('Parses global @INCLUDES in configuration ignoring @INCLUDES with fullPaths (ignoreFullPath: true)', () => {
       const filePath = '/__fixtures__/directives/include/ephemeral';
       const rawConfig = `
       @INCLUDE /this/is/a/full/path.conf

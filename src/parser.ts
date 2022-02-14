@@ -21,10 +21,22 @@ function normalizeField(field: string) {
   return normalizedField === 'match_regex' ? 'match' : normalizedField;
 }
 
+/**
+ * You might be wondering why the `DIRECTIVE` regex used on the states is wider than the one used here, (`DIRECTIVE_EXTRACTION_REGEX`).
+ *  The one used for the states has to be relaxed to be able to return the right guidance on the error. Chiefly, we want to provide
+ * a richer error response other than the one provided by moo library.
+ * We will collect all directives like tokens as valid, and later on (in tokenize function) sass out which ones are valid or not.
+ * follow [this link for an example with test data](https://regex101.com/r/gks9tK/1)
+ **/
+const DIRECTIVE_EXTRACTION_REGEX = /@(\w+)\s+[a-zA-Z.\/].*/;
+
+/**
+ * This Function will allow us to filter out the directives that are malformed without producing an error at the tokenizer level.
+ */
 const caseInsensitiveKeywords = (defs: Record<string, string>) => {
   const keys = keywords(defs);
   return (value: string) => {
-    const matches = value.match(/@(\w+)\s+\w+/) || [];
+    const matches = value.match(DIRECTIVE_EXTRACTION_REGEX) || [];
     try {
       return keys(matches[1].toUpperCase());
     } catch (e) {
@@ -40,8 +52,8 @@ const stateSet = {
       {
         match: /@\w+\s+.*/,
         type: caseInsensitiveKeywords(TOKEN_TYPES_DIRECTIVES),
-        value: (value: string) => {
-          const [, directive, ...rest] = value.trim().split(/(@\w+)/i);
+        value: (text: string) => {
+          const [, directive, ...rest] = text.trim().split(/(@\w+)/i);
           return `${directive.toUpperCase()} ${rest.join('').trim()}`;
         },
       },
@@ -65,12 +77,24 @@ const stateSet = {
     [TOKEN_TYPES.CLOSE_BLOCK]: { match: ']', push: 'main' },
   },
 };
-export function tokenize(
-  config: string,
-  filePath: string,
-  directives: FluentBitToken[],
-  pathMemo = new Set()
-): FluentBitToken[] {
+type TokenizeProps = {
+  config: string;
+  filePath: string;
+  directives: FluentBitToken[];
+  pathMemo?: Set<string>;
+  options?: TokenizeOptions;
+};
+
+type TokenizeOptions = {
+  ignoreFullPaths: boolean;
+};
+export function tokenize({
+  config,
+  filePath,
+  directives,
+  pathMemo = new Set(),
+  options = { ignoreFullPaths: false },
+}: TokenizeProps): FluentBitToken[] {
   if (!config.replace(/\s/g, '')) {
     throw new TokenError('File is empty', filePath, 0, 0);
   }
@@ -112,6 +136,12 @@ export function tokenize(
           token.col
         );
       }
+
+      // We will ignore full paths on @INCLUDE directive
+      if (isAbsolute(includeFilePath) && options.ignoreFullPaths) {
+        continue;
+      }
+
       let includeConfig = '';
       const fullPath = join(dirname(filePath), includeFilePath);
 
@@ -133,11 +163,11 @@ export function tokenize(
         if (e instanceof TokenError) {
           throw e;
         }
-        throw new TokenError(`Can not read file ${includeFilePath}`, filePath, token.line, token.col);
+        throw new TokenError(`Can not find file ${includeFilePath}`, filePath, token.line, token.col);
       }
 
       directives.push({ ...token, filePath: fullPath });
-      const includeTokens = tokenize(includeConfig, fullPath, directives, pathMemo);
+      const includeTokens = tokenize({ config: includeConfig, filePath: fullPath, directives, pathMemo });
       tokens = [...tokens, ...includeTokens];
     } else {
       tokens.push({ ...token, filePath });
@@ -208,11 +238,16 @@ export class FluentBitSchema {
   private _tokenIndex: TokenIndex;
 
   private _directives: FluentBitToken[];
-  constructor(source: string, filePath: string) {
+  constructor(source: string, filePath: string, tokenizeOptions: TokenizeOptions = { ignoreFullPaths: false }) {
     this._source = source;
     this._filePath = filePath;
     this._directives = [] as FluentBitToken[];
-    this._tokens = tokenize(source, getFullPath(filePath), this._directives);
+    this._tokens = tokenize({
+      config: source,
+      filePath: getFullPath(filePath),
+      directives: this._directives,
+      options: tokenizeOptions,
+    });
     this._tokenIndex = new TokenIndex();
   }
   static isFluentBitConfiguration(source: string) {

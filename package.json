@@ -5,7 +5,7 @@
     "url": "git+ssh://git@github.com/calyptia/fluent-bit-config-parser.git"
   },
   "license": "Apache-2.0",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "fluent-bit config parser for js/ts",
   "main": "dist/index.js",
   "types": "types/index.d.ts",

@@ -250,24 +250,24 @@ export class FluentBitSchema {
     });
     this._tokenIndex = new TokenIndex();
   }
-  static isFluentBitConfiguration(source: string) {
+  static isFluentBitConfiguration(source: string): boolean {
     return isFluentBit(source);
   }
   get AST(): FluentBitSchemaType[] {
     this._tokenIndex.clear();
     return tokensToAST(this._tokens, this._tokenIndex);
   }
-  get filePath() {
+  get filePath(): string {
     return this._filePath;
   }
-  get source() {
+  get source(): string {
     return this._source;
   }
 
-  get directives() {
+  get directives(): FluentBitToken[] {
     return this._directives;
   }
-  get schema() {
+  get schema(): FluentBitSection[] {
     const test = (node: FluentBitSchemaType) => {
       const isValidBlock = isValidFluentBitSection(node);
       const isNotCustomSectionName = !isCustomSectionName(node);
@@ -279,10 +279,10 @@ export class FluentBitSchema {
     return this.AST.filter(test).map(({ __filePath, ...rest }) => ({ ...rest } as FluentBitSection));
   }
 
-  getTokensBySectionId(sectionId: string) {
+  getTokensBySectionId(sectionId: string): FluentBitToken[] | undefined {
     return this._tokenIndex.get(sectionId);
   }
-  toString(indent?: number) {
+  toString(indent?: number): string {
     return schemaToString(this.schema, this.directives, { propIndent: indent });
   }
 }

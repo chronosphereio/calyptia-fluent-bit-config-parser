@@ -124,6 +124,7 @@ export const cases: Case[] = [
     {
       config: [
         {
+          id: 'UNIQUE',
           command: COMMANDS.INPUT,
           name: 'tail',
           optional: {
@@ -138,7 +139,6 @@ export const cases: Case[] = [
             tag: 'couchbase.log.<logname>',
             tag_regex: '${COUCHBASE_LOGS}/(?<logname>[^.]+).log$',
           },
-          id: 'UNIQUE',
         },
       ],
     },

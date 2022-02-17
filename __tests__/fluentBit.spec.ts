@@ -112,6 +112,68 @@ describe('Fluent Bit', () => {
         "
       `);
     });
+
+    it('should parse PARSE section', () => {
+      const rawConfig = `
+      [PARSER]
+          # http://rubular.com/r/IvZVElTgNl
+          Name ceph
+          Format regex
+          Regex ^(?<log_time>[^ ][-.\d\+:T]+[ ]*[.:\d]*)\s+(?<message>.*)$
+          Time_Format %Y-%m-%d %H:%M:%S.%L
+          Time_Keep Off
+          Time_Key log_time
+      `;
+
+      const config = new FluentBitSchema(rawConfig, '/__fixtures__/ephemeral_parse.conf');
+
+      expect(config.AST).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "__filePath": "/__fixtures__/ephemeral_parse.conf",
+            "command": "PARSER",
+            "id": "UNIQUE",
+            "name": "ceph",
+            "optional": Object {
+              "format": "regex",
+              "regex": "^(?<log_time>[^ ][-.d+:T]+[ ]*[.:d]*)s+(?<message>.*)$",
+              "time_format": "%Y-%m-%d %H:%M:%S.%L",
+              "time_keep": "Off",
+              "time_key": "log_time",
+            },
+          },
+        ]
+      `);
+    });
+
+    it('should parse MULTILINE PARSE section', () => {
+      const rawConfig = `
+      [MULTILINE_PARSER]
+          name          exception_test
+          type          regex
+          flush_timeout 1000
+          rule          "start_state"  "/(Dec \d+ \d+\:\d+\:\d+)(.*)/" "cont"
+          rule          "cont" "/^\s+at.*/" "cont"
+      `;
+
+      const config = new FluentBitSchema(rawConfig, '/__fixtures__/ephemeral_parse.conf');
+
+      expect(config.AST).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "__filePath": "/__fixtures__/ephemeral_parse.conf",
+            "command": "MULTILINE_PARSER",
+            "id": "UNIQUE",
+            "name": "exception_test",
+            "optional": Object {
+              "flush_timeout": "1000",
+              "rule": "\\"cont\\" \\"/^s+at.*/\\" \\"cont\\"",
+              "type": "regex",
+            },
+          },
+        ]
+      `);
+    });
     it.each(cases)('is %s, fluent-bit configuration?', (_name, rawConfig) => {
       expect(FluentBitSchema.isFluentBitConfiguration(rawConfig)).toBe(true);
     });

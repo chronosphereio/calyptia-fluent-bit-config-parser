@@ -19,7 +19,7 @@
 
 <p align="center">
   <a href="https://github.com/calyptia/fluent-bit-config-parser">
-    <img src="images/logo.png" alt="Logo" width="128" height="128">
+    <img src="images/logo.svg" alt="Logo" width="128" height="128">
   </a>
 
 </p>

@@ -33,8 +33,8 @@ export enum TOKEN_TYPES {
 export type FluentBitSection = {
   id: string;
   name?: string;
-  command: COMMANDS;
-  optional?: { [key: string]: unknown };
+  command: keyof typeof COMMANDS;
+  optional?: Record<string, string>;
 };
 
 export interface FluentBitSchemaType extends FluentBitSection {

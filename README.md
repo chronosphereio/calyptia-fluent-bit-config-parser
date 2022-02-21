@@ -1,4 +1,7 @@
 <p align="center">
+    <a href="https://www.npmjs.com/package/@calyptia/fluent-bit-config-parser">
+      <img src="https://img.shields.io/npm/v/@calyptia/fluent-bit-config-parser" alt="npm version" />
+    </a> 
     <a href="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/linting.yml">
       <img src="https://github.com/calyptia/fluent-bit-config-parser/actions/workflows/linting.yml/badge.svg" alt="Linting" />
     </a>
@@ -11,10 +14,10 @@
     <a href="https://github.com/calyptia/fluent-bit-config-parser/blob/main/LICENSE">
       <img src="https://img.shields.io/github/license/calyptia/fluent-bit-config-parser" alt="APACHE 2.0 license" />
     </a>
-    <a href="https://www.npmjs.com/package/@calyptia/fluent-bit-config-parser">
-      <img src="https://img.shields.io/npm/v/@calyptia/fluent-bit-config-parser" alt="npm version" />
+      <a href="http://slack.fluentd.org/">
+      <img src="https://img.shields.io/badge/slack-@slack.fluentd.org-green.svg?logo=slack" alt="Slack" />
     </a>
-    <!--  -->
+   
 </p>
 
 <p align="center">
@@ -26,7 +29,7 @@
 
 Configuration parser for [Fluent-bit](https://github.com/fluent/fluent-bit)
 
-## Table of Contents
+## Table of Contents 🦫
 
 - [Getting Started](#getting-started)
   - [How to import](#how-to-import)

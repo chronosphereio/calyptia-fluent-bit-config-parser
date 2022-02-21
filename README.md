@@ -18,7 +18,6 @@
       <img src="https://img.shields.io/badge/slack-@slack.fluentd.org-green.svg?logo=slack" alt="Slack" />
     </a>
    
-    <!--  -->
 </p>
 
 <p align="center">

@@ -7,7 +7,7 @@ import {
   TOKEN_TYPES_DIRECTIVES,
   type FluentBitSchemaType,
 } from './constants';
-import { isCommandType, isCustomSectionName, isFluentBit, isValidFluentBitSection } from './guards';
+import { isCommandType, isFluentBit, isValidSchema } from './guards';
 import { keywords, states } from 'moo';
 import { schemaToString } from './schemaToString';
 import { readFileSync, realpathSync } from 'fs';
@@ -212,7 +212,7 @@ export function tokensToAST(tokens: FluentBitToken[], tokenIndex: TokenIndex): F
         const attrValue = value.join(' ');
 
         if (attrName === 'name') {
-          block = { ...block, [attrName]: attrValue };
+          block = { ...block, name: attrValue };
         } else {
           block = {
             ...block,
@@ -230,7 +230,6 @@ export function tokensToAST(tokens: FluentBitToken[], tokenIndex: TokenIndex): F
 function getFullPath(filePath: string) {
   return isAbsolute(filePath) ? filePath : realpathSync(filePath);
 }
-
 export class FluentBitSchema {
   private _filePath: string;
   private _source: string;
@@ -268,15 +267,8 @@ export class FluentBitSchema {
     return this._directives;
   }
   get schema(): FluentBitSection[] {
-    const test = (node: FluentBitSchemaType) => {
-      const isValidBlock = isValidFluentBitSection(node);
-      const isNotCustomSectionName = !isCustomSectionName(node);
-
-      return isValidBlock && isNotCustomSectionName;
-    };
-
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    return this.AST.filter(test).map(({ __filePath, ...rest }) => ({ ...rest } as FluentBitSection));
+    return this.AST.filter(isValidSchema).map(({ __filePath, ...rest }) => ({ ...rest } as FluentBitSection));
   }
 
   getTokensBySectionId(sectionId: string): FluentBitToken[] | undefined {

@@ -21,3 +21,10 @@ export const isCommandType = (type?: string): type is COMMANDS =>
 export const isCustomSectionName = (block: FluentBitSchemaType) =>
   !!isString(block.name) &&
   (block.name.includes(CUSTOM_SECTIONS_NAMES.FLUENTBIT_METRICS) || block.name.includes(CUSTOM_SECTIONS_NAMES.CALYPTIA));
+
+export const isValidSchema = (node: FluentBitSchemaType) => {
+  const isValidBlock = isValidFluentBitSection(node);
+  const isNotCustomSectionName = !isCustomSectionName(node);
+
+  return isValidBlock && isNotCustomSectionName;
+};

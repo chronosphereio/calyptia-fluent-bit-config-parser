@@ -89,7 +89,7 @@
   },
   "author": "Gago <xeroice@gmail.com>",
   "dependencies": {
-    "debug": "4.3.3",
+    "debug": "4.3.4",
     "moo": "^0.5.1",
     "table": "^6.8.0",
     "uuid": "^8.3.2"
